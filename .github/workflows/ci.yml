@@ -1,0 +1,43 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  DEPLOYMENT_ENV: "false"
+  POSTGRES_URL: "https://fake.com"
+  POSTGRES_PRISMA_URL: "https://fake.com"
+  POSTGRES_URL_NO_SSL: "https://fake.com"
+  POSTGRES_URL_NON_POOLING: "https://fake.com"
+  POSTGRES_USER: "default"
+  POSTGRES_HOST: "host"
+  POSTGRES_PASSWORD: "password"
+  POSTGRES_DATABASE: "database"
+  ALPACA_KEY_LIVE: "fakeKey"
+  ALPACA_SECRET_LIVE: "fakeKey"
+  ALPACA_KEY_PAPER: "fakeKey"
+  ALPACA_SECRET_PAPER: "fakeKey"
+  SENTRY_AUTH_TOKEN: "fakeToken"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./orders
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: ./orders
+
+      - name: Lint
+        run: npm run lint
+        working-directory: ./orders
+
+      - name: Print Environment Variable
+        run: echo $MY_ENV_VAR
+        working-directory: ./orders

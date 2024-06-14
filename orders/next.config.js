@@ -5,7 +5,15 @@
 await import("./src/env.js");
 
 /** @type {import("next").NextConfig} */
-const coreConfig = {};
+const coreConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  swcMinify: true,
+};
 
 // Injected content via Sentry wizard below
 import { withSentryConfig } from "@sentry/nextjs";
