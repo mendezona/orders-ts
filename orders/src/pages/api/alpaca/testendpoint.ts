@@ -13,11 +13,9 @@ export default async function handler(
   }
 
   try {
-    // TODO: Delete when Sentry integration test is complete
-    throw new Error("Test Sentry integration with an error");
-    // return res.status(200).json({
-    //   message: "Success",
-    // });
+    return res.status(200).json({
+      message: "Success",
+    });
   } catch (error) {
     Sentry.captureException(error);
     console.error(error);
