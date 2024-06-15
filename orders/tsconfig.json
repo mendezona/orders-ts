@@ -52,6 +52,10 @@
   ],
   "exclude": [
     "node_modules",
-    "jest.config.ts"
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }
