@@ -27,17 +27,21 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Dependencies
-        run: npm install
+        run: pnpm install
         working-directory: ./orders
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
         working-directory: ./orders
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
         working-directory: ./orders
 
       - name: Print Environment Variable
         run: echo $MY_ENV_VAR
+        working-directory: ./orders
+
+      - name: Unit Tests
+        run: pnpm run test
         working-directory: ./orders
