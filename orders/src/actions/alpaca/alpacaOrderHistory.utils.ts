@@ -11,6 +11,14 @@ import {
   type Order,
 } from "./alpacaApi.types";
 
+/**
+ * Check if last filled order for an asset was a buy or a sell.
+ *
+ * @param symbol - The symbol to check if it was a buy or sell, e.g., APPL.
+ * @param account - Account to check the history of.
+ *
+ * @returns - An OrderSide object ("buy" or "sell").
+ */
 export const alpacaCheckLastFilledOrderType = async (
   symbol: string,
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,

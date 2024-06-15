@@ -26,7 +26,7 @@ import {
  * @param accountName - The name of the account to trade with.
  * @param developmentModeToggle - Forcibly enable development mode.
  *
- * @returns An AlpacaAccountCredentials object containing the endpoint, key, secret, and paper, to pass to the Bybit SDK API.
+ * @returns An AlpacaAccountCredentials object containing the endpoint, key, secret, and paper.
  */
 export const alpacaGetCredentials = (
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
@@ -51,11 +51,11 @@ export const alpacaGetCredentials = (
 };
 
 /**
- * Retrieves the account balance
+ * Retrieves the account balance.
  *
- * @param accountName - The name of the account to trade with
+ * @param accountName - The name of the account to trade with.
  *
- * @returns An object containing account details, equity, and cash, or "Account not found"
+ * @returns An object containing account details, equity, and cash.
  */
 export const alpacaGetAccountBalance = async (
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
