@@ -12,10 +12,10 @@ env:
   POSTGRES_HOST: "host"
   POSTGRES_PASSWORD: "password"
   POSTGRES_DATABASE: "database"
-  ALPACA_KEY_LIVE: "fakeKey"
-  ALPACA_SECRET_LIVE: "fakeKey"
-  ALPACA_KEY_PAPER: "fakeKey"
-  ALPACA_SECRET_PAPER: "fakeKey"
+  ALPACA_LIVE_KEY: "fakeKey"
+  ALPACA_LIVE_SECRET: "fakeKey"
+  ALPACA_PAPER_KEY: "fakeKey"
+  ALPACA_PAPER_SECRET: "fakeKey"
   SENTRY_AUTH_TOKEN: "fakeToken"
 
 jobs:
