@@ -9,11 +9,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "lint": "next lint",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "jest --config jest.config.ts"
+    "test": "jest --config jest.config.ts",
+    "clean": "turbo run clean && rm -rf node_modules && rm -rf packages/pack && rm -rf packages/coverage && rm -rf shared/coverage && rm -rf reports"
   },
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^3.0.1",
