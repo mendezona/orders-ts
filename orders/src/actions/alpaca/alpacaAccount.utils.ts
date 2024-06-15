@@ -12,16 +12,12 @@ import {
 import { type AlpacaAPIGetPosition, type AlpacaAccountCredentials, type AlpacaGetAvailableAssetBalance } from "./alpaca.types";
 
 /**
- * Retrieves the account credentials for trading (most likely paper trading
- * account or live account)
- *
- * Parameters:
- * - accountName: The name of the account to trade with
- * - developmentModeToggle: Forcely enable development mode
- *
- * Returns:
- * - A AlpacaAccountCredentials object containing the endpoint, key, secret,
- *   and paper, to pass to the Bybit SDK API
+ * Retrieves the account credentials for trading (most likely paper trading account or live account).
+ * 
+ * @param accountName - The name of the account to trade with.
+ * @param developmentModeToggle - Forcibly enable development mode.
+ * 
+ * @returns An AlpacaAccountCredentials object containing the endpoint, key, secret, and paper, to pass to the Bybit SDK API.
  */
 export const alpacaGetCredentials = (
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
@@ -45,7 +41,14 @@ export const alpacaGetCredentials = (
   }
 };
 
-
+/**
+ * Get the amount of assets you own available to trade for a single symbol.
+ * 
+ * @param symbol - The symbol to search for the available asset balance.
+ * @param accountName - The name of the account to search with.
+ * 
+ * @returns A Decimal with the number of available assets.
+ */
 export const alpacaGetAvailableAssetBalance = async (
   symbol: string,
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE
@@ -64,7 +67,7 @@ export const alpacaGetAvailableAssetBalance = async (
 
   try {
     const positionDetails: AlpacaAPIGetPosition = await alpaca.getPosition(symbol) satisfies AlpacaAPIGetPosition;
-    
+
     console.log(`Position for ${symbol}:`, positionDetails);
     console.log(`Quantity of ${symbol}:`, positionDetails.qty);
     console.log(`Market value for ${symbol}:`, positionDetails.market_value);
