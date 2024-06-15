@@ -1,18 +1,16 @@
 import type Decimal from 'decimal.js';
-
-// Types returned by the Alpaca API
-export interface AlpacaAPIGetPosition {
-  position: string;
-  qty: string;
-  market_value: string;
-}
-
-// Custom types for my own functions
+import { type RawData, type TradeAccount } from './alpacaApi.types';
 export interface AlpacaAccountCredentials {
   endpoint: string;
   key: string;
   secret: string;
   paper: boolean;
+}
+
+export interface AlpacaGetAccountBalance {
+  account: TradeAccount | RawData;
+  accountEquity: Decimal;
+  accountCash: Decimal;
 }
     
 export interface AlpacaGetAvailableAssetBalance {

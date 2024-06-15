@@ -6,10 +6,17 @@ import {
   ALPACA_TRADING_ACCOUNT_NAME_PAPER,
 } from "./alpaca.constants";
 import { type AlpacaGetAvailableAssetBalance } from "./alpaca.types";
-import { alpacaGetAvailableAssetBalance, alpacaGetCredentials } from "./alpacaAccount.utils";
-import { MOCK_ALPACA_ACCOUNTS, mockCredentials, mockPositionDetails } from "./alpacaAccount.utils.test.mockdata";
+import {
+  alpacaGetAvailableAssetBalance,
+  alpacaGetCredentials,
+} from "./alpacaAccount.utils";
+import {
+  MOCK_ALPACA_ACCOUNTS,
+  mockCredentials,
+  mockPositionDetails,
+} from "./alpacaAccount.utils.test.mockdata";
 
-jest.mock('@alpacahq/alpaca-trade-api', () => {
+jest.mock("@alpacahq/alpaca-trade-api", () => {
   return {
     __esModule: true,
     default: jest.fn().mockImplementation(() => ({
@@ -18,6 +25,7 @@ jest.mock('@alpacahq/alpaca-trade-api', () => {
   };
 });
 
+jest.mock("~/server/queries", () => jest.fn());
 
 jest.mock("./alpaca.constants", () => ({
   ...jest.requireActual("./alpaca.constants"),
@@ -36,7 +44,6 @@ jest.mock("./alpaca.constants", () => ({
     },
   },
 }));
-
 
 describe("alpacaGetCredentials", () => {
   it("should return live account credentials when development mode is false", () => {
@@ -57,8 +64,10 @@ describe("alpacaGetCredentials", () => {
       MOCK_ALPACA_ACCOUNTS[ALPACA_TRADING_ACCOUNT_NAME_PAPER],
     );
   });
-  it('should throw an error when account name does not exist', () => {
-    expect(() => alpacaGetCredentials('nonExistingAccount')).toThrow('Alpaca account credentials not found');
+  it("should throw an error when account name does not exist", () => {
+    expect(() => alpacaGetCredentials("nonExistingAccount")).toThrow(
+      "Alpaca account credentials not found",
+    );
   });
   it("should return paper account credentials by default when development mode is true", () => {
     const credentials = alpacaGetCredentials(undefined, true);
@@ -74,24 +83,30 @@ describe("alpacaGetCredentials", () => {
   });
 });
 
-describe('alpacaGetAvailableAssetBalance', () => {
+describe("alpacaGetAvailableAssetBalance", () => {
   beforeEach(() => {
-    jest.doMock('./alpacaAccount.utils', () => ({
+    jest.doMock("./alpacaAccount.utils", () => ({
       alpacaGetCredentials: jest.fn().mockReturnValue(mockCredentials),
     }));
   });
-  it('should return available asset balance for the given symbol', async () => {
-    const result: AlpacaGetAvailableAssetBalance = await alpacaGetAvailableAssetBalance('AAPL');
+  it("should return available asset balance for the given symbol", async () => {
+    const result: AlpacaGetAvailableAssetBalance =
+      await alpacaGetAvailableAssetBalance("AAPL");
     expect(result.position).toBe(mockPositionDetails.position);
-    expect(result.qty).toEqual(new Decimal(mockPositionDetails.qty));
-    expect(result.market_value).toEqual(new Decimal(mockPositionDetails.market_value));
+    expect(result.qty).toEqual(new Decimal(mockPositionDetails.qty!));
+    expect(result.market_value).toEqual(
+      new Decimal(mockPositionDetails.market_value!),
+    );
   });
-  it('should throw an error if getPosition fails', async () => {
+  it("should throw an error if getPosition fails", async () => {
     const AlpacaMock = Alpaca as jest.MockedClass<typeof Alpaca>;
     const alpacaInstance = new AlpacaMock();
-    (alpacaInstance.getPosition as jest.Mock).mockRejectedValueOnce(new Error('API error'));
+    (alpacaInstance.getPosition as jest.Mock).mockRejectedValueOnce(
+      new Error("API error"),
+    );
     AlpacaMock.mockImplementation(() => alpacaInstance);
-    await expect(alpacaGetAvailableAssetBalance('AAPL')).rejects.toThrow('Error getting position for: AAPL');
+    await expect(alpacaGetAvailableAssetBalance("AAPL")).rejects.toThrow(
+      "Error getting position for: AAPL",
+    );
   });
 });
-
