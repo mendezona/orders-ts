@@ -3,11 +3,11 @@
 
 import { sql } from "drizzle-orm";
 import {
-  index,
+  integer,
+  numeric,
   pgTableCreator,
-  serial,
+  serial, text,
   timestamp,
-  varchar,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -16,19 +16,32 @@ import {
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = pgTableCreator((name) => `orders_${name}`);
+export const createTable = pgTableCreator((name) => `orders_ts_${name}`);
 
-export const posts = createTable(
-  "post",
-  {
-    id: serial("id").primaryKey(),
-    name: varchar("name", { length: 256 }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }),
-  },
-  (example) => ({
-    nameIndex: index("name_idx").on(example.name),
-  })
-);
+export const assets = createTable("assets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  symbol: text("symbol").unique().notNull(),
+});
+
+export const trades = createTable("trades", {
+  id: serial("id").primaryKey(),
+  assetId: integer("asset_id").references(() => assets.id).notNull(),
+  tradeTime: timestamp("trade_time", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  tradePrice: numeric("trade_price", { precision: 20, scale: 10 }).notNull(),
+  quantity: numeric("quantity", { precision: 20, scale: 10 }).notNull(),
+  tradeType: text("trade_type").notNull(),
+});
+
+export const allocations = createTable("allocations", {
+  id: serial("id").primaryKey(),
+  assetId: integer("asset_id").references(() => assets.id).notNull(),
+  allocatedAmount: numeric("allocated_amount", { precision: 20, scale: 10 }).notNull(),
+  poolAmount: numeric("pool_amount", { precision: 20, scale: 10 }).notNull(),
+});
+
+export const profits = createTable("profits", {
+  id: serial("id").primaryKey(),
+  tradeId: integer("trade_id").references(() => trades.id).notNull(),
+  profitAmount: numeric("profit_amount", { precision: 20, scale: 10 }).notNull(),
+});

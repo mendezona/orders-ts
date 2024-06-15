@@ -6,5 +6,5 @@ export default {
   dbCredentials: {
     url: process.env.POSTGRES_URL ?? "",
   },
-  tablesFilter: ["orders_*"],
+  tablesFilter: ["orders_ts*"],
 } satisfies Config;
