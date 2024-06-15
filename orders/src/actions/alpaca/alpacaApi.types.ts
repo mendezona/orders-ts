@@ -1,7 +1,7 @@
 import { type UUID } from "crypto";
 
 export interface AlpacaApiGetPosition extends Partial<Position> {
-  position: string
+  position: string;
 }
 
 export interface Position {
@@ -102,6 +102,41 @@ export interface TradeAccount {
   options_trading_level?: number;
 }
 
+export interface Order {
+  id: UUID;
+  clientOrderId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  submittedAt: Date;
+  filledAt?: Date;
+  expiredAt?: Date;
+  canceledAt?: Date;
+  failedAt?: Date;
+  replacedAt?: Date;
+  replacedBy?: UUID;
+  replaces?: UUID;
+  assetId: UUID;
+  symbol: string;
+  assetClass: AssetClass;
+  notional?: string;
+  qty?: string | number;
+  filledQty?: string | number;
+  filledAvgPrice?: string | number;
+  orderClass: OrderClass;
+  orderType: OrderType;
+  type: OrderType;
+  side: OrderSide;
+  timeInForce: TimeInForce;
+  limitPrice?: string | number;
+  stopPrice?: string | number;
+  status: OrderStatus;
+  extendedHours: boolean;
+  legs?: Order[];
+  trailPercent?: string;
+  trailPrice?: string;
+  hwm?: string;
+}
+
 export interface USDPositionValues {
   avg_entry_price: string;
   market_value: string;
@@ -136,7 +171,7 @@ export enum AccountStatus {
   RESUBMITTED = "RESUBMITTED",
   SIGNED_UP = "SIGNED_UP",
   SUBMISSION_FAILED = "SUBMISSION_FAILED",
-  SUBMITTED = "SUBMITTED"
+  SUBMITTED = "SUBMITTED",
 }
 
 export enum AssetExchange {
@@ -152,18 +187,74 @@ export enum AssetExchange {
   ERSX = "ERSX",
   OTC = "OTC",
   CRYPTO = "CRYPTO",
-  EMPTY = ""
+  EMPTY = "",
 }
 
 export enum AssetClass {
   US_EQUITY = "us_equity",
   US_OPTION = "us_option",
-  CRYPTO = "crypto"
+  CRYPTO = "crypto",
+}
+
+export enum QueryOrderStatus {
+  OPEN = "open",
+  CLOSED = "closed",
+  ALL = "all",
 }
 
 export enum PositionSide {
   SHORT = "short",
-  LONG = "long"
+  LONG = "long",
+}
+
+export enum OrderSide {
+  BUY = "buy",
+  SELL = "sell",
+}
+
+export enum OrderClass {
+  SIMPLE = "simple",
+  BRACKET = "bracket",
+  OCO = "oco",
+  OTO = "oto",
+}
+
+export enum OrderType {
+  MARKET = "market",
+  LIMIT = "limit",
+  STOP = "stop",
+  STOP_LIMIT = "stop_limit",
+  TRAILING_STOP = "trailing_stop",
+}
+
+export enum TimeInForce {
+  DAY = "day",
+  GTC = "gtc",
+  OPG = "opg",
+  CLS = "cls",
+  IOC = "ioc",
+  FOK = "fok",
+}
+
+export enum OrderStatus {
+  NEW = "new",
+  PARTIALLY_FILLED = "partially_filled",
+  FILLED = "filled",
+  DONE_FOR_DAY = "done_for_day",
+  CANCELED = "canceled",
+  EXPIRED = "expired",
+  REPLACED = "replaced",
+  PENDING_CANCEL = "pending_cancel",
+  PENDING_REPLACE = "pending_replace",
+  PENDING_REVIEW = "pending_review",
+  ACCEPTED = "accepted",
+  PENDING_NEW = "pending_new",
+  ACCEPTED_FOR_BIDDING = "accepted_for_bidding",
+  STOPPED = "stopped",
+  REJECTED = "rejected",
+  SUSPENDED = "suspended",
+  CALCULATED = "calculated",
+  HELD = "held",
 }
 
 export type RawData = Record<string, unknown>;
