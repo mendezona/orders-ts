@@ -1,6 +1,6 @@
 {
-  "id": "2fae811d-ac09-486c-a207-9d0e27a10922",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "81d959a9-0af6-4009-b23a-0a1fbd34fdb0",
+  "prevId": "2fae811d-ac09-486c-a207-9d0e27a10922",
   "version": "6",
   "dialect": "postgresql",
   "tables": {
@@ -12,12 +12,6 @@
           "name": "id",
           "type": "serial",
           "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true
         },
         "symbol": {
