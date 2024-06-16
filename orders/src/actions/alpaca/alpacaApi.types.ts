@@ -137,6 +137,25 @@ export interface Order {
   hwm?: string;
 }
 
+export interface Asset {
+  id: UUID;
+  asset_class: AssetClass;
+  exchange: AssetExchange;
+  symbol: string;
+  name?: string;
+  status: AssetStatus;
+  tradable: boolean;
+  marginable: boolean;
+  shortable: boolean;
+  easy_to_borrow: boolean;
+  fractionable: boolean;
+  min_order_size?: number;
+  min_trade_increment?: number;
+  price_increment?: number;
+  maintenance_margin_requirement?: number;
+  attributes?: string[];
+}
+
 export interface USDPositionValues {
   avg_entry_price: string;
   market_value: string;
@@ -255,6 +274,11 @@ export enum OrderStatus {
   SUSPENDED = "suspended",
   CALCULATED = "calculated",
   HELD = "held",
+}
+
+export enum AssetStatus {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
 }
 
 export type RawData = Record<string, unknown>;
