@@ -1,10 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import Decimal from "decimal.js";
 import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
-import { type Asset } from "./alpacaApi.types";
+import {
+  OrderSide,
+  QueryOrderStatus,
+  type Asset,
+  type Order,
+} from "./alpacaApi.types";
 
 /**
  * Checks if asset is fractionable, or if only whole orders can be submitted
@@ -43,4 +50,86 @@ export const alpacaIsAssetFractionable = async (
     );
     throw new Error(`Error - Unable to determine if asset is fractionable`);
   }
+};
+
+/**
+ * Calculate the profit/loss amount on an asset's last trade. Looks at last open and close of an asset
+ *
+ * @param symbol - Symbol to check if asset is fractionable
+ * @param account - Account to use to check if asset is fractionable
+ *
+ * @returns - A Decimal, a negative or positive number based on profit or loss calculation
+ */
+export const alpacaCalculateProfitLoss = async (
+  symbol: string,
+  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+): Promise<Decimal> => {
+  const credentials = alpacaGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  const alpaca: Alpaca = new Alpaca({
+    keyId: credentials.key,
+    secretKey: credentials.secret,
+    paper: credentials.paper,
+  });
+
+  // Fetch the most recent orders, considering a reasonable limit
+  const orders: Order[] = await alpaca.getOrders({
+    symbols: symbol,
+    status: QueryOrderStatus.CLOSED,
+    limit: 5,
+    until: null,
+    after: null,
+    direction: null,
+    nested: null,
+  });
+
+  // Find the most recent sell order
+  const recentSellOrder = orders
+    .reverse()
+    .find((order) => order.side === OrderSide.SELL);
+
+  if (!recentSellOrder?.filled_avg_price || !recentSellOrder.filled_qty) {
+    throw new Error("No recent sell order found.");
+  }
+
+  const sellQuantityNeeded = new Decimal(recentSellOrder.filled_qty);
+  const sellPrice = new Decimal(recentSellOrder.filled_avg_price);
+  let accumulatedBuyQuantity = new Decimal(0);
+  let totalBuyCost = new Decimal(0);
+
+  // Accumulate buy orders starting from the most recent
+  for (const order of orders.reverse()) {
+    if (order.side === OrderSide.BUY) {
+      if (!!order.filled_qty && !!order.filled_avg_price) {
+        const buyQuantity = new Decimal(order.filled_qty);
+        const buyPrice = new Decimal(order.filled_avg_price);
+
+        // Determine how much of this order to use
+        const quantityToUse = Decimal.min(
+          buyQuantity,
+          sellQuantityNeeded.minus(accumulatedBuyQuantity),
+        );
+        totalBuyCost = totalBuyCost.plus(quantityToUse.times(buyPrice));
+        accumulatedBuyQuantity = accumulatedBuyQuantity.plus(quantityToUse);
+
+        if (accumulatedBuyQuantity.greaterThanOrEqualTo(sellQuantityNeeded)) {
+          break;
+        }
+      }
+    }
+  }
+
+  if (accumulatedBuyQuantity.lessThan(sellQuantityNeeded)) {
+    throw new Error("Not enough buy orders to match the sell quantity.");
+  }
+
+  // Calculate profit or loss
+  const averageBuyPrice = totalBuyCost.dividedBy(accumulatedBuyQuantity);
+  const profitLoss = sellPrice.minus(averageBuyPrice).times(sellQuantityNeeded);
+
+  console.log(`Profit/loss: ${profitLoss.toString()}`);
+  return profitLoss;
 };

@@ -104,36 +104,36 @@ export interface TradeAccount {
 
 export interface Order {
   id: UUID;
-  clientOrderId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  submittedAt: Date;
-  filledAt?: Date;
-  expiredAt?: Date;
-  canceledAt?: Date;
-  failedAt?: Date;
-  replacedAt?: Date;
-  replacedBy?: UUID;
+  client_order_id: string;
+  created_at: Date;
+  updated_at: Date;
+  submitted_at: Date;
+  filled_at?: Date;
+  expired_at?: Date;
+  canceled_at?: Date;
+  failed_at?: Date;
+  replaced_at?: Date;
+  replaced_by?: UUID;
   replaces?: UUID;
-  assetId: UUID;
+  asset_id: UUID;
   symbol: string;
-  assetClass: AssetClass;
+  asset_class: AssetClass;
   notional?: string;
   qty?: string | number;
-  filledQty?: string | number;
-  filledAvgPrice?: string | number;
-  orderClass: OrderClass;
-  orderType: OrderType;
+  filled_qty?: string | number;
+  filled_avg_price?: string | number;
+  order_class: OrderClass;
+  order_type: OrderType;
   type: OrderType;
   side: OrderSide;
-  timeInForce: TimeInForce;
-  limitPrice?: string | number;
-  stopPrice?: string | number;
+  time_in_force: TimeInForce;
+  limit_price?: string | number;
+  stop_price?: string | number;
   status: OrderStatus;
-  extendedHours: boolean;
+  extended_hours: boolean;
   legs?: Order[];
-  trailPercent?: string;
-  trailPrice?: string;
+  trail_percent?: string;
+  trail_price?: string;
   hwm?: string;
 }
 

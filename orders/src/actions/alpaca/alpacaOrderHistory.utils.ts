@@ -36,7 +36,7 @@ export const alpacaCheckLastFilledOrderType = async (
 
   try {
     const recentClosedOrders = (await alpaca.getOrders({
-      symbols: [symbol],
+      symbols: symbol,
       status: QueryOrderStatus.CLOSED,
       limit: 10,
       direction: null,
@@ -44,13 +44,11 @@ export const alpacaCheckLastFilledOrderType = async (
       after: null,
       nested: null,
     })) satisfies Order[];
-    console.log("Closed orders:", recentClosedOrders);
 
     // Filter out only filled orders
     const filledOrders: Order[] = recentClosedOrders.filter(
       (order: Order) => order.status === OrderStatus.FILLED,
     );
-    console.log("Filled orders:", filledOrders);
 
     // Check if there are any filled orders
     if (filledOrders.length === 0 || filledOrders[0] === undefined) {
