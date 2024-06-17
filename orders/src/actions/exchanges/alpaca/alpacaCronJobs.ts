@@ -1,3 +1,5 @@
+"use server";
+
 import * as Sentry from "@sentry/nextjs";
 import { Client } from "@upstash/qstash";
 import dayjs from "dayjs";
