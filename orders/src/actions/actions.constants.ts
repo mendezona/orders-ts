@@ -1,1 +1,2 @@
-export const DEVELOPMENT_MODE = process.env.DEVELOPMENT_MODE === "true";
+export const DEVELOPMENT_MODE: boolean =
+  process.env.DEVELOPMENT_MODE === "true";
