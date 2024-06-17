@@ -19,12 +19,118 @@ import {
 } from "./alpacaOrders.helpers";
 
 /**
+ * Submits a limit order with a custom quantity for the specified asset.
+ *
+ * @param alpacaSymbol - The ticker symbol of the asset to trade.
+ * @param quantity - The quantity of the asset to trade.
+ * @param limitPrice - The limit price for the order. If not provided, it will be calculated.
+ * @param buySideOrder - If true, places a buy order; otherwise, places a sell order.
+ * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ * @param orderType - The type of order to submit.
+ * @param timeInForce - The time in force for the order. Defaults to 'day'.
+ * @param setSlippagePercentage - The slippage percentage to adjust the limit price. Defaults to 0.
+ */
+export const alpacaSubmitLimitOrderCustomQuantity = async (
+  alpacaSymbol: string,
+  quantity: number,
+  limitPrice?: Decimal,
+  buySideOrder = true,
+  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  orderType: OrderType = OrderType.LIMIT,
+  timeInForce: TimeInForce = TimeInForce.DAY,
+  setSlippagePercentage: Decimal = new Decimal(0),
+): Promise<void> => {
+  const credentials = alpacaGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomQuantity");
+  logTimesInNewYorkAndLocalTimezone();
+
+  if (!limitPrice) {
+    let quotePrice: Decimal;
+    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
+      alpacaSymbol,
+      accountName,
+    );
+
+    if (buySideOrder) {
+      quotePrice = latestQuote.askPrice.gt(0)
+        ? latestQuote.askPrice
+        : latestQuote.bidPrice;
+      limitPrice = quotePrice
+        .minus(quotePrice.times(setSlippagePercentage))
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    } else {
+      quotePrice = latestQuote.bidPrice.gt(0)
+        ? latestQuote.bidPrice
+        : latestQuote.askPrice;
+      limitPrice = quotePrice
+        .minus(quotePrice.times(setSlippagePercentage))
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    }
+  }
+
+  const orderSide: OrderSide = buySideOrder ? OrderSide.BUY : OrderSide.SELL;
+  let orderRequest: OrderRequest;
+  const fractionable: boolean = await alpacaIsAssetFractionable(
+    alpacaSymbol,
+    accountName,
+  );
+
+  if (fractionable) {
+    orderRequest = {
+      symbol: alpacaSymbol,
+      notional: new Decimal(quantity).times(limitPrice).toNumber(),
+      side: orderSide,
+      type: orderType,
+      time_in_force: timeInForce,
+      limit_price: limitPrice.toNumber(),
+      extended_hours: true,
+    };
+  } else {
+    orderRequest = {
+      symbol: alpacaSymbol,
+      qty: new Decimal(quantity)
+        .toDecimalPlaces(0, Decimal.ROUND_DOWN)
+        .toNumber(),
+      side: orderSide,
+      type: orderType,
+      time_in_force: timeInForce,
+      limit_price: limitPrice.toNumber(),
+      extended_hours: true,
+    };
+  }
+
+  try {
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
+    console.log("orderRequest:", orderRequest);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const orderResponse = await alpaca.createOrder(orderRequest);
+    console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
+    console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
+  } catch (error) {
+    console.error("Error - alpacaSubmitLimitOrderCustomQuantity:", error);
+    throw new Error(
+      "Error - alpacaSubmitLimitOrderCustomQuantity unable to execute",
+    );
+  }
+};
+
+/**
  * Submits a limit order with a custom percentage of the account's capital.
  *
  * @param alpacaSymbol - The ticker symbol of the asset to trade.
  * @param buySideOrder - If true, places a buy order; otherwise, places a sell order.
  * @param capitalPercentageToDeploy - The percentage of the account's capital to deploy.
  * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ * @param orderType - The type of order to submit.
  * @param timeInForce - The time in force for the order. Defaults to 'day'.
  * @param limitPrice - The limit price for the order. If not provided, it will be calculated.
  * @param setSlippagePercentage - The slippage percentage to add to the limit price. Defaults to 0.
@@ -64,11 +170,11 @@ export const alpacaSubmitLimitOrderCustomPercentage = async (
   }
 
   if (!limitPrice) {
+    let quotePrice: Decimal;
     const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
       alpacaSymbol,
       accountName,
     );
-    let quotePrice: Decimal;
 
     if (buySideOrder) {
       quotePrice = latestQuote.askPrice.gt(0)
