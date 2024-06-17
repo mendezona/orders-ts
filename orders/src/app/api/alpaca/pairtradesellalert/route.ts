@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
   try {
     await alpacaSubmitPairTradeOrder({
-      tradingviewSymbol: tradingViewAlert.ticker,
+      tradingViewSymbol: tradingViewAlert.ticker,
       tradingViewPrice: tradingViewAlert.closePrice,
       buyAlert: false,
     });

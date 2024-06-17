@@ -9,7 +9,9 @@ export type SaveSellTradeToDatabaseBuyTableProps = Omit<
   "id" | "tradeTime"
 >;
 
-export type SaveSellTradeToDatabaseSellTableProps = Omit<
-  SellTrade,
-  "id" | "tradeTime"
->;
+export interface SaveSellTradeToDatabaseSellTableProps
+  extends Omit<SellTrade, "id" | "tradeTime"> {
+  buyAlert: boolean;
+}
+
+export type BuyTableItem = Omit<BuyTrade, "id">;

@@ -27,6 +27,7 @@ import {
 } from "./alpaca.constants";
 import {
   type AlpacaGetLatestQuote,
+  type AlpacaSchedulePriceCheckAtNextInternalCronJobParams,
   type AlpacaSubmitLimitOrderCustomPercentageParams,
   type AlpacaSubmitLimitOrderCustomQuantityParams,
   type AlpacaSubmitMarketOrderCustomPercentageParams,
@@ -43,6 +44,7 @@ import {
   TimeInForce,
   type OrderRequest,
 } from "./alpacaApi.types";
+import { alpacaSchedulePriceCheckAtNextIntervalCronJob } from "./alpacaCronJobs";
 import { alpacaCheckLastFilledOrderType } from "./alpacaOrderHistory.utils";
 import {
   alpacaAreHoldingsClosed,
@@ -54,34 +56,39 @@ import {
 /**
  * Submits a pair trade order, intended to flip from long to short position or vice versa.
  *
- * @param tradingviewSymbol - The ticker symbol of the asset to trade.
+ * @param tradingViewSymbol - The ticker symbol of the asset to trade.
+ * @param tradingViewPrice - The price of the asset to trade.
+ * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
  * @param capitalPercentageToDeploy - The percentage of equity to deploy.
  * @param calculateTax - Calculate and save taxable amount.
  * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
  * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ * @param scheduleCronJob - Whether to schedule a cron job to check the price at the next defined interval.
  */
 export const alpacaSubmitPairTradeOrder = async ({
-  tradingviewSymbol,
+  tradingViewSymbol,
   tradingViewPrice,
+  tradingViewInterval,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   calculateTax = true,
   buyAlert = true,
   accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  scheduleCronJob = true,
 }: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
   console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
   logTimesInNewYorkAndLocalTimezone();
 
   // Check if there is an inverse order open
   const alpacaSymbol: string | undefined = buyAlert
-    ? ALPACA_TRADINGVIEW_SYMBOLS[tradingviewSymbol]
-    : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingviewSymbol];
+    ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol]
+    : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol];
   const alpacaInverseSymbol: string | undefined = buyAlert
-    ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingviewSymbol]
-    : ALPACA_TRADINGVIEW_SYMBOLS[tradingviewSymbol];
+    ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol]
+    : ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol];
 
   if (!alpacaSymbol || !alpacaInverseSymbol) {
     throw new Error(
-      `Error - alpacaSubmitPairTradeOrder: ${tradingviewSymbol} not found`,
+      `Error - alpacaSubmitPairTradeOrder: ${tradingViewSymbol} not found`,
     );
   }
 
@@ -135,6 +142,7 @@ export const alpacaSubmitPairTradeOrder = async ({
         symbol: alpacaInverseSymbol,
         profitOrLossAmount: profitLossAmount.toString(),
         taxableAmount: taxAmount.toString(),
+        buyAlert,
       } as SaveSellTradeToDatabaseSellTableProps);
     }
   }
@@ -158,6 +166,17 @@ export const alpacaSubmitPairTradeOrder = async ({
     symbol: alpacaSymbol,
     price: tradingViewPrice,
   } as SaveSellTradeToDatabaseBuyTableProps);
+
+  if (scheduleCronJob) {
+    if (!tradingViewInterval) {
+      throw new Error("Error - Interval required to set cron job");
+    }
+    await alpacaSchedulePriceCheckAtNextIntervalCronJob({
+      tradingViewSymbol,
+      tradingViewPrice,
+      tradingViewInterval,
+    } as AlpacaSchedulePriceCheckAtNextInternalCronJobParams);
+  }
 };
 
 /**

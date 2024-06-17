@@ -4,11 +4,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
-import { and, gt, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gt, gte, lte } from "drizzle-orm";
 import { db } from "./db";
 import { buyTrades, sellTrades } from "./db/schema";
 import { getFinancialYearDates } from "./queries.helpers";
 import {
+  type BuyTableItem,
   type SaveSellTradeToDatabaseBuyTableProps,
   type SaveSellTradeToDatabaseSellTableProps,
 } from "./queries.types";
@@ -71,6 +72,28 @@ export const saveSellTradeToDatabaseSellTable = async ({
       profitOrLossAmount,
       taxableAmount,
     });
+  } catch (error) {
+    Sentry.captureException(error);
+    throw error;
+  }
+};
+
+export const getLatestBuyTradeForSymbol = async (
+  symbol: string,
+): Promise<BuyTableItem> => {
+  try {
+    const latestTrade = await db
+      .select()
+      .from(buyTrades)
+      .where(eq(buyTrades.symbol, symbol))
+      .orderBy(desc(buyTrades.tradeTime))
+      .limit(1);
+
+    if (latestTrade.length > 0) {
+      return latestTrade[0] as BuyTableItem;
+    }
+
+    throw new Error(`No trades found for symbol: ${symbol}`);
   } catch (error) {
     Sentry.captureException(error);
     throw error;

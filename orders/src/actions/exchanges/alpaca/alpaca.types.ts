@@ -40,12 +40,14 @@ export interface AlpacaOrderRequestParams {
 }
 
 export interface AlpacaSubmitPairTradeOrderParams {
-  tradingviewSymbol: string;
+  tradingViewSymbol: string;
   tradingViewPrice: string;
+  tradingViewInterval?: string;
   buyAlert?: boolean;
   capitalPercentageToDeploy?: Decimal;
   calculateTax?: boolean;
   accountName?: string;
+  scheduleCronJob?: boolean;
 }
 
 export interface AlpacaSubmitLimitOrderCustomQuantityParams
@@ -65,4 +67,16 @@ export interface AlpacaSubmitLimitOrderCustomPercentageParams
 export interface AlpacaSubmitMarketOrderCustomPercentageParams
   extends AlpacaOrderRequestParams {
   capitalPercentageToDeploy: Decimal;
+}
+
+export interface AlpacaCheckLatestPriceAndReverseTradeCronJobParams {
+  tradingViewSymbol: string;
+  buyAlert: boolean;
+}
+
+export interface AlpacaSchedulePriceCheckAtNextInternalCronJobParams {
+  tradingViewSymbol: string;
+  tradingViewPrice: string;
+  tradingViewInterval: string;
+  buyAlert: boolean;
 }
