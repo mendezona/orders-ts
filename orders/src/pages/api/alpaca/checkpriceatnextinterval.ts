@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/dist/server/web/spec-extension/response";
 
 const handler = async (_req: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
