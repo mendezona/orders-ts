@@ -1,9 +1,18 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
-import { saveTradeToDatabase } from "~/server/queries";
-import { type SaveTradeToDatabaseProps } from "~/server/queries.types";
-import { EXCHANGE_CAPITAL_GAINS_TAX_RATE } from "../exchanges.contants";
+import {
+  saveBuyTradeToDatabaseBuyTable,
+  saveSellTradeToDatabaseSellTable,
+} from "~/server/queries";
+import {
+  type SaveSellTradeToDatabaseBuyTableProps,
+  type SaveSellTradeToDatabaseSellTableProps,
+} from "~/server/queries.types";
+import {
+  EXCHANGES,
+  EXCHANGE_CAPITAL_GAINS_TAX_RATE,
+} from "../exchanges.contants";
 import {
   isOutsideNasdaqTradingHours,
   logTimesInNewYorkAndLocalTimezone,
@@ -53,6 +62,7 @@ import {
  */
 export const alpacaSubmitPairTradeOrder = async ({
   tradingviewSymbol,
+  tradingViewPrice,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   calculateTax = true,
   buyAlert = true,
@@ -121,11 +131,11 @@ export const alpacaSubmitPairTradeOrder = async ({
     console.log("tax_amount", profitLossAmount.toString(), "\n");
 
     if (taxAmount.gt(0)) {
-      await saveTradeToDatabase({
+      await saveSellTradeToDatabaseSellTable({
         symbol: alpacaInverseSymbol,
         profitOrLossAmount: profitLossAmount.toString(),
         taxableAmount: taxAmount.toString(),
-      } as SaveTradeToDatabaseProps);
+      } as SaveSellTradeToDatabaseSellTableProps);
     }
   }
 
@@ -143,6 +153,11 @@ export const alpacaSubmitPairTradeOrder = async ({
       accountName,
     } as AlpacaSubmitMarketOrderCustomPercentageParams);
   }
+  await saveBuyTradeToDatabaseBuyTable({
+    exchange: EXCHANGES.ALPACA,
+    symbol: alpacaSymbol,
+    price: tradingViewPrice,
+  } as SaveSellTradeToDatabaseBuyTableProps);
 };
 
 /**

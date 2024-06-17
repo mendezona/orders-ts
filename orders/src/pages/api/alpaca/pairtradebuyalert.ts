@@ -23,6 +23,7 @@ export default async function handler(
   try {
     await alpacaSubmitPairTradeOrder({
       tradingviewSymbol: tradingViewAlert.ticker,
+      tradingViewPrice: tradingViewAlert.closePrice,
     });
     return res.status(200).json({
       message:

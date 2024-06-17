@@ -41,6 +41,7 @@ export interface AlpacaOrderRequestParams {
 
 export interface AlpacaSubmitPairTradeOrderParams {
   tradingviewSymbol: string;
+  tradingViewPrice: string;
   buyAlert?: boolean;
   capitalPercentageToDeploy?: Decimal;
   calculateTax?: boolean;

@@ -6,9 +6,12 @@ import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { and, gt, gte, lte } from "drizzle-orm";
 import { db } from "./db";
-import { sellTrades } from "./db/schema";
+import { buyTrades, sellTrades } from "./db/schema";
 import { getFinancialYearDates } from "./queries.helpers";
-import { type SaveTradeToDatabaseProps } from "./queries.types";
+import {
+  type SaveSellTradeToDatabaseBuyTableProps,
+  type SaveSellTradeToDatabaseSellTableProps,
+} from "./queries.types";
 
 export const getLatestProfitAmountCurrentFinancialYear =
   async (): Promise<string> => {
@@ -40,11 +43,28 @@ export const getLatestProfitAmountCurrentFinancialYear =
     }
   };
 
-export const saveTradeToDatabase = async ({
+export const saveBuyTradeToDatabaseBuyTable = async ({
+  exchange,
+  symbol,
+  price,
+}: SaveSellTradeToDatabaseBuyTableProps) => {
+  try {
+    await db.insert(buyTrades).values({
+      exchange,
+      symbol,
+      price,
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+    throw error;
+  }
+};
+
+export const saveSellTradeToDatabaseSellTable = async ({
   symbol,
   profitOrLossAmount,
   taxableAmount,
-}: SaveTradeToDatabaseProps) => {
+}: SaveSellTradeToDatabaseSellTableProps) => {
   try {
     await db.insert(sellTrades).values({
       symbol,

@@ -18,6 +18,16 @@ import {
  */
 export const createTable = pgTableCreator((name) => `orders_ts_${name}`);
 
+export const buyTrades = createTable("buyTrades", {
+  id: serial("id").primaryKey(),
+  exchange: text("exchange").notNull(),
+  symbol: text("symbol").notNull(),
+  price: numeric("price", { precision: 20, scale: 10 }).notNull(),
+  tradeTime: timestamp("trade_time", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 export const sellTrades = createTable("sellTrades", {
   id: serial("id").primaryKey(),
   symbol: text("symbol").notNull(),
