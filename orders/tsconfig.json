@@ -45,10 +45,6 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.cjs",
-    "**/*.js",
-    "**/*.test.ts",
-    "**/*.test.tsx",
     ".next/types/**/*.ts",
     ".eslintrc.cjs"
   ],
