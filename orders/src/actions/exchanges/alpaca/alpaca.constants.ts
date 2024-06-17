@@ -1,4 +1,13 @@
+import Decimal from "decimal.js";
 import { type AlpacaAccountCredentials } from "./alpaca.types";
+
+export const ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE: Decimal = new Decimal(
+  1,
+);
+
+export const ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE: Decimal = new Decimal(
+  0.06,
+);
 
 export const ALPACA_TRADING_ACCOUNT_NAME_LIVE = "alpacaTradingAccountNameLive";
 export const ALPACA_TRADING_LIVE_ENDPOINT = "https://api.alpaca.markets";
@@ -21,3 +30,11 @@ export const ALPACA_ACCOUNTS: Record<string, AlpacaAccountCredentials> = {
     paper: true,
   },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const ALPACA_TRADINGVIEW_SYMBOLS: Record<string, string> = JSON.parse(
+  process.env.ALPACA_TRADINGVIEW_SYMBOLS ?? "{}",
+);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const ALPACA_TRADINGVIEW_INVERSE_PAIRS: Record<string, string> =
+  JSON.parse(process.env.ALPACA_TRADINGVIEW_INVERSE_PAIRS ?? "{}");

@@ -1,5 +1,9 @@
 import type Decimal from "decimal.js";
-import { type TradeAccount } from "./alpacaApi.types";
+import {
+  type OrderType,
+  type TimeInForce,
+  type TradeAccount,
+} from "./alpacaApi.types";
 
 export interface AlpacaAccountCredentials {
   endpoint: string;
@@ -25,4 +29,39 @@ export interface AlpacaGetLatestQuote {
   bidPrice: Decimal;
   askSize: Decimal;
   bidSize: Decimal;
+}
+
+export interface AlpacaOrderRequestParams {
+  alpacaSymbol: string;
+  buySideOrder: boolean;
+  accountName: string;
+  orderType: OrderType;
+  timeInForce: TimeInForce;
+}
+
+export interface AlpacaSubmitPairTradeOrderParams {
+  tradingviewSymbol: string;
+  buyAlert?: boolean;
+  capitalPercentageToDeploy?: Decimal;
+  calculateTax?: boolean;
+  accountName?: string;
+}
+
+export interface AlpacaSubmitLimitOrderCustomQuantityParams
+  extends AlpacaOrderRequestParams {
+  quantity: Decimal;
+  setSlippagePercentage: Decimal;
+  limitPrice?: Decimal;
+}
+
+export interface AlpacaSubmitLimitOrderCustomPercentageParams
+  extends AlpacaOrderRequestParams {
+  setSlippagePercentage: Decimal;
+  capitalPercentageToDeploy: Decimal;
+  limitPrice?: Decimal;
+}
+
+export interface AlpacaSubmitMarketOrderCustomPercentageParams
+  extends AlpacaOrderRequestParams {
+  capitalPercentageToDeploy: Decimal;
 }

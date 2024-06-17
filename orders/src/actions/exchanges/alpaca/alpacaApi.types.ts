@@ -144,15 +144,15 @@ export interface OrderRequest {
   side: OrderSide;
   type: OrderType;
   time_in_force: TimeInForce;
-  limit_price?: number; // optional
-  stop_price?: number; // optional
-  client_order_id?: string; // optional
-  extended_hours?: boolean; // optional
-  order_class?: string; // optional
-  take_profit?: object; // optional
-  stop_loss?: object; // optional
-  trail_price?: string; // optional
-  trail_percent?: string; // optional
+  limit_price?: number;
+  stop_price?: number;
+  client_order_id?: string;
+  extended_hours?: boolean;
+  order_class?: string;
+  take_profit?: object;
+  stop_loss?: object;
+  trail_price?: string;
+  trail_percent?: string;
 }
 
 export interface Asset {

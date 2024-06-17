@@ -1,10 +1,30 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import Decimal from "decimal.js";
-import { logTimesInNewYorkAndLocalTimezone } from "../exchanges.utils";
-import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
-import { type AlpacaGetLatestQuote } from "./alpaca.types";
+import { saveTradeToDatabase } from "~/server/queries";
+import { type SaveTradeToDatabaseProps } from "~/server/queries.types";
+import { EXCHANGE_CAPITAL_GAINS_TAX_RATE } from "../exchanges.contants";
+import {
+  isOutsideNasdaqTradingHours,
+  logTimesInNewYorkAndLocalTimezone,
+  wait,
+} from "../exchanges.utils";
+import {
+  ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
+  ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
+  ALPACA_TRADINGVIEW_INVERSE_PAIRS,
+  ALPACA_TRADINGVIEW_SYMBOLS,
+  ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+} from "./alpaca.constants";
+import {
+  type AlpacaGetLatestQuote,
+  type AlpacaSubmitLimitOrderCustomPercentageParams,
+  type AlpacaSubmitLimitOrderCustomQuantityParams,
+  type AlpacaSubmitMarketOrderCustomPercentageParams,
+  type AlpacaSubmitPairTradeOrderParams,
+} from "./alpaca.types";
 import {
   alpacaGetAccountBalance,
+  alpacaGetAvailableAssetBalance,
   alpacaGetCredentials,
 } from "./alpacaAccount.utils";
 import {
@@ -13,10 +33,116 @@ import {
   TimeInForce,
   type OrderRequest,
 } from "./alpacaApi.types";
+import { alpacaCheckLastFilledOrderType } from "./alpacaOrderHistory.utils";
 import {
+  alpacaAreHoldingsClosed,
+  alpacaCalculateProfitLoss,
   alpacaGetLatestQuote,
   alpacaIsAssetFractionable,
 } from "./alpacaOrders.helpers";
+
+/**
+ * Submits a pair trade order, intended to flip from long to short position or vice versa.
+ *
+ * @param tradingviewSymbol - The ticker symbol of the asset to trade.
+ * @param capitalPercentageToDeploy - The percentage of equity to deploy.
+ * @param calculateTax - Calculate and save taxable amount.
+ * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
+ * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ */
+export const alpacaSubmitPairTradeOrder = async ({
+  tradingviewSymbol,
+  capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
+  calculateTax = true,
+  buyAlert = true,
+  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+}: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
+  console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
+  logTimesInNewYorkAndLocalTimezone();
+
+  // Check if there is an inverse order open
+  const alpacaSymbol: string | undefined = buyAlert
+    ? ALPACA_TRADINGVIEW_SYMBOLS[tradingviewSymbol]
+    : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingviewSymbol];
+  const alpacaInverseSymbol: string | undefined = buyAlert
+    ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingviewSymbol]
+    : ALPACA_TRADINGVIEW_SYMBOLS[tradingviewSymbol];
+
+  if (!alpacaSymbol || !alpacaInverseSymbol) {
+    throw new Error(
+      `Error - alpacaSubmitPairTradeOrder: ${tradingviewSymbol} not found`,
+    );
+  }
+
+  /**
+   *  If there is no sell order found for inverse pair symbol,
+   *  sell all holdings of the inverse pair and save CGT to database
+   *  Assumes there is only one order open at a time for a given symbol
+   **/
+  if (
+    (await alpacaCheckLastFilledOrderType(alpacaInverseSymbol, accountName)) ===
+    OrderSide.BUY
+  ) {
+    if (isOutsideNasdaqTradingHours()) {
+      const assetBalance: Decimal = (
+        await alpacaGetAvailableAssetBalance(alpacaInverseSymbol)
+      ).qty;
+      await alpacaSubmitLimitOrderCustomQuantity({
+        alpacaSymbol: alpacaInverseSymbol,
+        quantity: assetBalance,
+        buySideOrder: false,
+        setSlippagePercentage: new Decimal("0.01"),
+      } as AlpacaSubmitLimitOrderCustomQuantityParams);
+    } else {
+      await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+    }
+  }
+
+  // Wait 10 seconds for trades to close
+  const timeout = 10;
+  const startTime: number = Date.now();
+  while ((Date.now() - startTime) / 1000 < timeout) {
+    if (await alpacaAreHoldingsClosed(alpacaInverseSymbol, accountName)) {
+      break;
+    }
+    await wait(1000);
+  }
+
+  // Calculate and save tax, if applicable
+  if (calculateTax) {
+    const profitLossAmount: Decimal = await alpacaCalculateProfitLoss(
+      alpacaInverseSymbol,
+      accountName,
+    );
+    const taxAmount: Decimal = profitLossAmount.times(
+      EXCHANGE_CAPITAL_GAINS_TAX_RATE,
+    );
+    console.log("tax_amount", profitLossAmount.toString(), "\n");
+
+    if (taxAmount.gt(0)) {
+      await saveTradeToDatabase({
+        symbol: alpacaInverseSymbol,
+        profitOrLossAmount: profitLossAmount.toString(),
+        taxableAmount: taxAmount.toString(),
+      } as SaveTradeToDatabaseProps);
+    }
+  }
+
+  if (isOutsideNasdaqTradingHours()) {
+    await alpacaSubmitLimitOrderCustomPercentage({
+      alpacaSymbol,
+      capitalPercentageToDeploy,
+      setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
+      accountName,
+    } as AlpacaSubmitLimitOrderCustomPercentageParams);
+  } else {
+    await alpacaSubmitMarketOrderCustomPercentage({
+      alpacaSymbol,
+      capitalPercentageToDeploy,
+      accountName,
+    } as AlpacaSubmitMarketOrderCustomPercentageParams);
+  }
+};
 
 /**
  * Submits a limit order with a custom quantity for the specified asset.
@@ -30,16 +156,16 @@ import {
  * @param timeInForce - The time in force for the order. Defaults to 'day'.
  * @param setSlippagePercentage - The slippage percentage to adjust the limit price. Defaults to 0.
  */
-export const alpacaSubmitLimitOrderCustomQuantity = async (
-  alpacaSymbol: string,
-  quantity: number,
-  limitPrice?: Decimal,
+export const alpacaSubmitLimitOrderCustomQuantity = async ({
+  alpacaSymbol,
+  quantity,
+  limitPrice,
   buySideOrder = true,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
-  orderType: OrderType = OrderType.LIMIT,
-  timeInForce: TimeInForce = TimeInForce.DAY,
-  setSlippagePercentage: Decimal = new Decimal(0),
-): Promise<void> => {
+  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  orderType = OrderType.LIMIT,
+  timeInForce = TimeInForce.DAY,
+  setSlippagePercentage = new Decimal(0),
+}: AlpacaSubmitLimitOrderCustomQuantityParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");
@@ -135,16 +261,16 @@ export const alpacaSubmitLimitOrderCustomQuantity = async (
  * @param limitPrice - The limit price for the order. If not provided, it will be calculated.
  * @param setSlippagePercentage - The slippage percentage to add to the limit price. Defaults to 0.
  */
-export const alpacaSubmitLimitOrderCustomPercentage = async (
-  alpacaSymbol: string,
+export const alpacaSubmitLimitOrderCustomPercentage = async ({
+  alpacaSymbol,
   buySideOrder = true,
-  capitalPercentageToDeploy = 1.0,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
-  orderType: OrderType = OrderType.LIMIT,
-  timeInForce: TimeInForce = TimeInForce.DAY,
-  limitPrice?: Decimal,
-  setSlippagePercentage: Decimal = new Decimal(0),
-): Promise<void> => {
+  capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
+  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  orderType = OrderType.LIMIT,
+  timeInForce = TimeInForce.DAY,
+  limitPrice,
+  setSlippagePercentage = new Decimal(0),
+}: AlpacaSubmitLimitOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");
@@ -166,7 +292,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async (
   }
 
   if (fundsToDeploy.gt(accountCash)) {
-    fundsToDeploy = accountCash;
+    fundsToDeploy = accountCash.toDecimalPlaces(2, Decimal.ROUND_DOWN);
   }
 
   if (!limitPrice) {
@@ -203,7 +329,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async (
   if (fractionable) {
     orderRequest = {
       symbol: alpacaSymbol,
-      notional: fundsToDeploy.toNumber(),
+      notional: fundsToDeploy.toDecimalPlaces(2, Decimal.ROUND_DOWN).toNumber(),
       side: orderSide,
       type: orderType,
       time_in_force: timeInForce,
@@ -266,14 +392,14 @@ export const alpacaSubmitLimitOrderCustomPercentage = async (
  *
  * @returns - Current time in New York and the specified local timezone, formatted as "YYYY-MM-DD HH:mm:ss".
  */
-export const alpacaSubmitMarketOrderCustomPercentage = async (
-  alpacaSymbol: string,
+export const alpacaSubmitMarketOrderCustomPercentage = async ({
+  alpacaSymbol,
   buySideOrder = true,
-  capitalPercentageToDeploy = 1.0,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
-  orderType: OrderType = OrderType.MARKET,
-  timeInForce: TimeInForce = TimeInForce.DAY,
-): Promise<void> => {
+  capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
+  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  orderType = OrderType.MARKET,
+  timeInForce = TimeInForce.DAY,
+}: AlpacaSubmitMarketOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");
@@ -296,7 +422,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async (
   }
 
   if (fundsToDeploy.gt(accountCash)) {
-    fundsToDeploy = accountCash;
+    fundsToDeploy = accountCash.toDecimalPlaces(2, Decimal.ROUND_DOWN);
   }
 
   let orderRequest: OrderRequest;

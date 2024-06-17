@@ -7,6 +7,7 @@ import { and, desc, gte, lte } from "drizzle-orm";
 import { db } from "./db";
 import { sellTrades } from "./db/schema";
 import { getFinancialYearDates } from "./queries.helpers";
+import { type SaveTradeToDatabaseProps } from "./queries.types";
 
 export const getLatestProfitAmountCurrentFinancialYear =
   async (): Promise<string> => {
@@ -39,3 +40,20 @@ export const getLatestProfitAmountCurrentFinancialYear =
       throw error;
     }
   };
+
+export const saveTradeToDatabase = async ({
+  symbol,
+  profitOrLossAmount,
+  taxableAmount,
+}: SaveTradeToDatabaseProps) => {
+  try {
+    await db.insert(sellTrades).values({
+      symbol,
+      profitOrLossAmount,
+      taxableAmount,
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+    throw error;
+  }
+};

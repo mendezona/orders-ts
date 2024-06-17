@@ -20,12 +20,12 @@ export const createTable = pgTableCreator((name) => `orders_ts_${name}`);
 
 export const sellTrades = createTable("sellTrades", {
   id: serial("id").primaryKey(),
-  symbol: text("symbol").unique().notNull(),
+  symbol: text("symbol").notNull(),
   profitOrLossAmount: numeric("profit_amount", {
     precision: 20,
     scale: 10,
   }).notNull(),
-  taxableAmount: numeric("profit_amount", { precision: 20, scale: 10 }),
+  taxableAmount: numeric("taxable_amount", { precision: 20, scale: 10 }),
   tradeTime: timestamp("trade_time", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

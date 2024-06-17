@@ -1,0 +1,50 @@
+{
+  "id": "3de66c68-376d-4a01-aebe-e4e657384633",
+  "prevId": "81d959a9-0af6-4009-b23a-0a1fbd34fdb0",
+  "version": "6",
+  "dialect": "postgresql",
+  "tables": {
+    "public.orders_ts_sellTrades": {
+      "name": "orders_ts_sellTrades",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profit_amount": {
+          "name": "profit_amount",
+          "type": "numeric(20, 10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trade_time": {
+          "name": "trade_time",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

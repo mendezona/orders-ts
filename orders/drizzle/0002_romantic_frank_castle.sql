@@ -1,0 +1,1 @@
+ALTER TABLE "orders_ts_sellTrades" DROP CONSTRAINT "orders_ts_sellTrades_symbol_unique";
