@@ -15,7 +15,7 @@ import {
  * Check if last filled order for an asset was a buy or a sell.
  *
  * @param symbol - The symbol to check if it was a buy or sell, e.g., APPL.
- * @param account - Account to check the history of.
+ * @param accountName - Account to check the history of.
  *
  * @returns - An OrderSide object ("buy" or "sell").
  */

@@ -15,6 +15,7 @@ import {
   QueryOrderStatus,
   type Asset,
   type Order,
+  type Position,
 } from "./alpacaApi.types";
 
 /**
@@ -60,7 +61,7 @@ export const alpacaIsAssetFractionable = async (
  * Calculate the profit/loss amount on an asset's last trade. Looks at last open and close of an asset
  *
  * @param symbol - Symbol to check if asset is fractionable
- * @param account - Account to use to check if asset is fractionable
+ * @param accountName - Account to use to check if asset is fractionable
  *
  * @returns - A Decimal, a negative or positive number based on profit or loss calculation
  */
@@ -142,7 +143,7 @@ export const alpacaCalculateProfitLoss = async (
  * Get the latest quote data for an asset, with two additional backup methods
  *
  * @param symbol - Symbol to check if asset is fractionable
- * @param account - Account to use to check if asset is fractionable
+ * @param accountName - Account to use to check if asset is fractionable
  *
  * @returns - A AlpacaGetLatestQuote object or an error object
  */
@@ -206,5 +207,45 @@ export const alpacaGetLatestQuote = async (
       error,
     );
     throw new Error(`Error - quote data for ${symbol} not found`);
+  }
+};
+
+/**
+ * Checks if there are any open positions for a given symbol.
+ *
+ * @param symbol - The symbol to check for open positions.
+ * @param accountName - The account to use for checking holdings.
+ *
+ * @returns - A boolean indicating if the holdings for the specified symbol are closed.
+ */
+export const alpacaAreHoldingsClosed = async (
+  symbol: string,
+  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+): Promise<boolean> => {
+  const credentials = alpacaGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  const alpaca: Alpaca = new Alpaca({
+    keyId: credentials.key,
+    secretKey: credentials.secret,
+    paper: credentials.paper,
+  });
+
+  try {
+    const openPositions = (await alpaca.getPositions()) satisfies Position[];
+    for (const position of openPositions) {
+      if (position.symbol === symbol && parseFloat(position.qty) > 0) {
+        console.log(`Open position for ${symbol} found`);
+        return false;
+      }
+    }
+
+    console.log(`All positions for ${symbol} have been closed`);
+    return true;
+  } catch (error) {
+    console.error(`Error - position data for ${symbol}:`, error);
+    throw new Error(`Error - position data for ${symbol} not found`);
   }
 };
