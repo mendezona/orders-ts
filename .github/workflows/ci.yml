@@ -19,6 +19,7 @@ env:
   SENTRY_AUTH_TOKEN: "fakeToken"
   ALPACA_TRADINGVIEW_SYMBOLS: "{}"
   ALPACA_TRADINGVIEW_INVERSE_PAIRS: "{}"
+  TRADINGVIEW_AUTH_TOKEN: "fakeToken"
 
 jobs:
   build:
