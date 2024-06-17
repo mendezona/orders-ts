@@ -515,7 +515,7 @@ export const alpacaCloseAllHoldingsOfAsset = async (
     );
     console.log("Alpaca Order End - alpacaCloseAllHoldingsOfAsset");
   } catch (error) {
-    console.error("Error - alpacaSubmitMarketOrderCustomPercentage:", error);
+    console.error("Error - alpacaCloseAllHoldingsOfAsset:", error);
     throw new Error("Error - alpacaCloseAllHoldingsOfAsset unable to execute");
   }
 };

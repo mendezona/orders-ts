@@ -92,7 +92,7 @@ export const alpacaCalculateProfitLoss = async (
   });
 
   // Find the most recent sell order
-  const recentSellOrder = orders
+  const recentSellOrder: Order | undefined = [...orders]
     .reverse()
     .find((order) => order.side === OrderSide.SELL);
 
@@ -100,13 +100,14 @@ export const alpacaCalculateProfitLoss = async (
     throw new Error("No recent sell order found.");
   }
 
-  const sellQuantityNeeded = new Decimal(recentSellOrder.filled_qty);
-  const sellPrice = new Decimal(recentSellOrder.filled_avg_price);
-  let accumulatedBuyQuantity = new Decimal(0);
-  let totalBuyCost = new Decimal(0);
+  const sellQuantityNeeded: Decimal = new Decimal(recentSellOrder.filled_qty);
+  const avgSellPrice: Decimal = new Decimal(recentSellOrder.filled_avg_price);
+  const sellPrice: Decimal = sellQuantityNeeded.times(avgSellPrice);
+  let accumulatedBuyQuantity: Decimal = new Decimal(0);
+  let totalBuyCost: Decimal = new Decimal(0);
 
   // Accumulate buy orders starting from the most recent
-  for (const order of orders.reverse()) {
+  for (const order of [...orders].reverse()) {
     if (order.side === OrderSide.BUY) {
       if (!!order.filled_qty && !!order.filled_avg_price) {
         const buyQuantity = new Decimal(order.filled_qty);
@@ -117,7 +118,9 @@ export const alpacaCalculateProfitLoss = async (
           buyQuantity,
           sellQuantityNeeded.minus(accumulatedBuyQuantity),
         );
-        totalBuyCost = totalBuyCost.plus(quantityToUse.times(buyPrice));
+        totalBuyCost = !!order.notional
+          ? new Decimal(order.notional)
+          : totalBuyCost.plus(quantityToUse.times(buyPrice));
         accumulatedBuyQuantity = accumulatedBuyQuantity.plus(quantityToUse);
 
         if (accumulatedBuyQuantity.greaterThanOrEqualTo(sellQuantityNeeded)) {
@@ -131,11 +134,12 @@ export const alpacaCalculateProfitLoss = async (
     throw new Error("Not enough buy orders to match the sell quantity.");
   }
 
-  // Calculate profit or loss
-  const averageBuyPrice = totalBuyCost.dividedBy(accumulatedBuyQuantity);
-  const profitLoss = sellPrice.minus(averageBuyPrice).times(sellQuantityNeeded);
+  console.log("Buy price", totalBuyCost.toString());
+  console.log("Sell price", sellPrice.toString());
 
-  console.log(`Profit/loss: ${profitLoss.toString()}`);
+  // Calculate profit or loss
+  const profitLoss: Decimal = totalBuyCost.minus(sellPrice);
+  console.log("Profit Loss:", profitLoss.toString());
   return profitLoss;
 };
 
