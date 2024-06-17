@@ -1,5 +1,6 @@
 import type Decimal from "decimal.js";
-import { type RawData, type TradeAccount } from "./alpacaApi.types";
+import { type TradeAccount } from "./alpacaApi.types";
+
 export interface AlpacaAccountCredentials {
   endpoint: string;
   key: string;
@@ -8,7 +9,7 @@ export interface AlpacaAccountCredentials {
 }
 
 export interface AlpacaGetAccountBalance {
-  account: TradeAccount | RawData;
+  account: TradeAccount;
   accountEquity: Decimal;
   accountCash: Decimal;
 }

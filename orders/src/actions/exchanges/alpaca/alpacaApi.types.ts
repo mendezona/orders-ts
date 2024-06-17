@@ -137,6 +137,24 @@ export interface Order {
   hwm?: string;
 }
 
+export interface OrderRequest {
+  symbol: string;
+  qty?: number;
+  notional?: number;
+  side: OrderSide;
+  type: OrderType;
+  time_in_force: TimeInForce;
+  limit_price?: number; // optional
+  stop_price?: number; // optional
+  client_order_id?: string; // optional
+  extended_hours?: boolean; // optional
+  order_class?: string; // optional
+  take_profit?: object; // optional
+  stop_loss?: object; // optional
+  trail_price?: string; // optional
+  trail_percent?: string; // optional
+}
+
 export interface Asset {
   id: UUID;
   asset_class: AssetClass;
