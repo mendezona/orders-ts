@@ -3,6 +3,7 @@ import { Client } from "@upstash/qstash";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { QSTASH_ALPACA_CRON_JOB_PRICE_CHECK_INTERVAL_TOPIC } from "~/actions/actions.constants";
 import { type TradingViewAlert } from "../exchanges.types";
 import { alpacaGetNextIntervalTime } from "./alpacaCronJob.helpers";
 
@@ -21,7 +22,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
   closePrice,
   interval,
 }: TradingViewAlert): Promise<void> => {
-  if (!process.env.UPSTASH_QSTASH_TOKEN || !process.env.DOMAIN_BASE_URL) {
+  if (!process.env.UPSTASH_QSTASH_TOKEN) {
     throw new Error(
       "alpacaSchedulePriceCheckAtNextIntervalCronJob - environment variables are not defined",
     );
@@ -43,8 +44,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
 
   try {
     const response = await client.publish({
-      topic: "schedule-job",
-      destination: `${process.env.DOMAIN_BASE_URL}/compare-price`,
+      topic: QSTASH_ALPACA_CRON_JOB_PRICE_CHECK_INTERVAL_TOPIC,
       delay: delayInSeconds,
       body: JSON.stringify(jobData),
       method: "POST",
