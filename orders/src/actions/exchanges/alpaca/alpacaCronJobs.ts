@@ -22,7 +22,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
   closePrice,
   interval,
 }: TradingViewAlert): Promise<void> => {
-  if (!process.env.UPSTASH_QSTASH_TOKEN) {
+  if (!process.env.QSTASH_URL || !process.env.QSTASH_TOKEN) {
     throw new Error(
       "alpacaSchedulePriceCheckAtNextIntervalCronJob - environment variables are not defined",
     );
@@ -38,7 +38,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
   const nextTime = alpacaGetNextIntervalTime(now, parseInt(interval, 10));
 
   // Schedule the job using qstash
-  const client = new Client({ token: process.env.UPSTASH_QSTASH_TOKEN });
+  const client = new Client({ token: process.env.QSTASH_TOKEN });
   const jobData = { ticker, closePrice, interval };
   const delayInSeconds: number = nextTime.diff(now, "second");
 
