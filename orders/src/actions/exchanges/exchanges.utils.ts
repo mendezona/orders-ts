@@ -6,6 +6,13 @@ import { EXCHANGE_LOCAL_TIMEZONE } from "./exchanges.contants";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+/**
+ * Logs and returns the current time in New York and a specified local timezone.
+ *
+ * @param localTimezone - The local timezone for conversion.
+ *
+ * @returns - Current time in New York and the specified local timezone, formatted as "YYYY-MM-DD HH:mm:ss".
+ */
 export const logTimesInNewYorkAndLocalTimezone = (
   localTimezone: string = EXCHANGE_LOCAL_TIMEZONE,
 ): [string, string] => {

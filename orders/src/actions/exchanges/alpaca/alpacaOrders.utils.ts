@@ -18,6 +18,18 @@ import {
   alpacaIsAssetFractionable,
 } from "./alpacaOrders.helpers";
 
+/**
+ * Submits a market order to Alpaca based on a percentage of account equity.
+ *
+ * @param alpacaSymbol - The symbol of the asset to trade.
+ * @param buySideOrder - Whether to buy or sell the asset.
+ * @param capitalPercentageToDeploy - The percentage of account equity to deploy.
+ * @param accountName - The name of the Alpaca trading account.
+ * @param orderType - The type of order to submit.
+ * @param timeInForce - The time in force for the order.
+ *
+ * @returns - Current time in New York and the specified local timezone, formatted as "YYYY-MM-DD HH:mm:ss".
+ */
 export const alpacaSubmitMarketOrderCustomPercentage = async (
   alpacaSymbol: string,
   buySideOrder = true,
