@@ -3,8 +3,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import { type AlpacaQuote } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/entityv2";
+// import { type GetQuotesParams } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/rest_v2";
 import Decimal from "decimal.js";
 import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
+// import getStartOfCurrentTradingDay from "./alpaca.helpers";
+import { type AlpacaGetLatestQuote } from "./alpaca.types";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import {
   OrderSide,
@@ -132,4 +136,75 @@ export const alpacaCalculateProfitLoss = async (
 
   console.log(`Profit/loss: ${profitLoss.toString()}`);
   return profitLoss;
+};
+
+/**
+ * Get the latest quote data for an asset, with two additional backup methods
+ *
+ * @param symbol - Symbol to check if asset is fractionable
+ * @param account - Account to use to check if asset is fractionable
+ *
+ * @returns - A AlpacaGetLatestQuote object or an error object
+ */
+export const alpacaGetLatestQuote = async (
+  symbol: string,
+  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+): Promise<AlpacaGetLatestQuote> => {
+  const credentials = alpacaGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  const alpaca: Alpaca = new Alpaca({
+    keyId: credentials.key,
+    secretKey: credentials.secret,
+    paper: credentials.paper,
+  });
+
+  try {
+    const getLatestQuoteData: AlpacaQuote = await alpaca.getLatestQuote(symbol);
+    if (!!getLatestQuoteData.BidPrice || !!getLatestQuoteData.AskPrice) {
+      const convertedQuoteData: AlpacaGetLatestQuote = {
+        askPrice: new Decimal(getLatestQuoteData.AskPrice),
+        bidPrice: new Decimal(getLatestQuoteData.BidPrice),
+        askSize: new Decimal(getLatestQuoteData.AskSize),
+        bidSize: new Decimal(getLatestQuoteData.BidSize),
+      };
+
+      console.log(
+        "Quote Method 1 - Latest quote data found:",
+        getLatestQuoteData,
+      );
+      return convertedQuoteData;
+    }
+
+    // // Backup method: getQuotesV2
+    // const quotesParams: GetQuotesParams = {
+    //   start: getStartOfCurrentTradingDay(),
+    //   limit: 1,
+    // };
+    // const getQuotesData = alpaca.getQuotesV2(symbol, quotesParams);
+    // for await (const quote of getQuotesData) {
+    //   if (quote.BidPrice !== undefined || quote.AskPrice !== undefined) {
+    //     const convertedQuoteData: AlpacaGetLatestQuote = {
+    //       askPrice: new Decimal(quote.AskPrice),
+    //       bidPrice: new Decimal(quote.BidPrice),
+    //       askSize: new Decimal(quote.AskSize),
+    //       bidSize: new Decimal(quote.BidSize),
+    //     };
+
+    //     console.log("Quote Method 2 - Quote data found:", convertedQuoteData);
+    //     return convertedQuoteData;
+    //   }
+    // }
+
+    console.error(`An error occurred while fetching quote data for ${symbol}`);
+    throw new Error(`Error - quote data for ${symbol} not found`);
+  } catch (error) {
+    console.error(
+      `An error occurred while fetching quote data for ${symbol}:`,
+      error,
+    );
+    throw new Error(`Error - quote data for ${symbol} not found`);
+  }
 };
