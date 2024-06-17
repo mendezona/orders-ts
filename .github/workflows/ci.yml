@@ -20,10 +20,12 @@ env:
   ALPACA_TRADINGVIEW_SYMBOLS: "{}"
   ALPACA_TRADINGVIEW_INVERSE_PAIRS: "{}"
   TRADINGVIEW_AUTH_TOKEN: "fakeToken"
-  UPSTASH_QSTASH_URL: "https://fake.com"
-  UPSTASH_QSTASH_TOKEN: "fakeToken"
   DEVELOPMENT_MODE: "false"
   FINANCIAL_YEAR_PERIOD: "Jan-Dec"
+  QSTASH_URL: "https://fake.com"
+  QSTASH_TOKEN: "fakeToken"
+  QSTASH_CURRENT_SIGNING_KEY: "fakeKey"
+  QSTASH_NEXT_SIGNING_KEY: "fakeKey"
 
 jobs:
   build:
