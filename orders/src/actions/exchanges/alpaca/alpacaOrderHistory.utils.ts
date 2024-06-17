@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import * as Sentry from "@sentry/nextjs";
 import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import {
@@ -63,7 +64,8 @@ export const alpacaCheckLastFilledOrderType = async (
     console.log("Last order was a", orderSide);
     return orderSide;
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error fetching last closed orders:", error);
-    throw new Error("Error fetching last closed orders");
+    throw error;
   }
 };

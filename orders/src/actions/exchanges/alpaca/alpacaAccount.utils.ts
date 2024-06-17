@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { getLatestProfitAmountCurrentFinancialYear } from "~/server/queries";
 import { DEVELOPMENT_MODE } from "../../actions.constants";
@@ -46,6 +47,7 @@ export const alpacaGetCredentials = (
       paper: accountInfo.paper,
     };
   } else {
+    console.log("Error - Alpaca account credentials not found");
     throw new Error("Alpaca account credentials not found");
   }
 };
@@ -95,8 +97,9 @@ export const alpacaGetAccountBalance = async (
       accountCash: cash,
     };
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error fetching account balance:", error);
-    throw new Error("Error fetching account balance");
+    throw error;
   }
 };
 
@@ -142,7 +145,8 @@ export const alpacaGetAvailableAssetBalance = async (
       market_value: new Decimal(positionDetails.market_value),
     };
   } catch (error) {
+    Sentry.captureException(error);
     console.error(`Error getting position for ${symbol}:`, error);
-    throw new Error(`Error getting position for: ${symbol}`);
+    throw error;
   }
 };

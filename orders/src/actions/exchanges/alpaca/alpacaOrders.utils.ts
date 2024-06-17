@@ -1,4 +1,5 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { saveTradeToDatabase } from "~/server/queries";
 import { type SaveTradeToDatabaseProps } from "~/server/queries.types";
@@ -242,10 +243,9 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error - alpacaSubmitLimitOrderCustomQuantity:", error);
-    throw new Error(
-      "Error - alpacaSubmitLimitOrderCustomQuantity unable to execute",
-    );
+    throw error;
   }
 };
 
@@ -373,10 +373,9 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomPercentage");
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error - alpacaSubmitLimitOrderCustomPercentage:", error);
-    throw new Error(
-      "Error - alpacaSubmitLimitOrderCustomPercentage unable to execute",
-    );
+    throw error;
   }
 };
 
@@ -475,10 +474,9 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     console.log(`Market ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitMarketOrderCustomPercentage");
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error - alpacaSubmitMarketOrderCustomPercentage:", error);
-    throw new Error(
-      "Error - alpacaSubmitMarketOrderCustomPercentage unable to execute",
-    );
+    throw error;
   }
 };
 
@@ -515,7 +513,8 @@ export const alpacaCloseAllHoldingsOfAsset = async (
     );
     console.log("Alpaca Order End - alpacaCloseAllHoldingsOfAsset");
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error - alpacaCloseAllHoldingsOfAsset:", error);
-    throw new Error("Error - alpacaCloseAllHoldingsOfAsset unable to execute");
+    throw error;
   }
 };

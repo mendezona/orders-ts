@@ -106,7 +106,7 @@ describe("alpacaGetAvailableAssetBalance", () => {
     );
     AlpacaMock.mockImplementation(() => alpacaInstance);
     await expect(alpacaGetAvailableAssetBalance("AAPL")).rejects.toThrow(
-      "Error getting position for: AAPL",
+      "API error",
     );
   });
 });

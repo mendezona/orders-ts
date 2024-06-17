@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import { type AlpacaQuote } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/entityv2";
+import * as Sentry from "@sentry/nextjs";
 // import { type GetQuotesParams } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/rest_v2";
 import Decimal from "decimal.js";
 import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
@@ -206,11 +207,12 @@ export const alpacaGetLatestQuote = async (
     console.error(`An error occurred while fetching quote data for ${symbol}`);
     throw new Error(`Error - quote data for ${symbol} not found`);
   } catch (error) {
+    Sentry.captureException(error);
     console.error(
       `An error occurred while fetching quote data for ${symbol}:`,
       error,
     );
-    throw new Error(`Error - quote data for ${symbol} not found`);
+    throw error;
   }
 };
 
@@ -249,7 +251,8 @@ export const alpacaAreHoldingsClosed = async (
     console.log(`All positions for ${symbol} have been closed`);
     return true;
   } catch (error) {
+    Sentry.captureException(error);
     console.error(`Error - position data for ${symbol}:`, error);
-    throw new Error(`Error - position data for ${symbol} not found`);
+    throw error;
   }
 };
