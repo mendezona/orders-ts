@@ -119,3 +119,37 @@ export const alpacaSubmitMarketOrderCustomPercentage = async (
     );
   }
 };
+
+/**
+ * Sells all holdings of an asset using the Alpaca trading API.
+ *
+ * @param symbol - The ticker symbol of the asset to sell.
+ * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ */
+export const alpacaCloseAllHoldingsOfAsset = async (
+  symbol: string,
+  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+): Promise<void> => {
+  const credentials = alpacaGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  console.log("Alpaca Order Begin - alpacaCloseAllHoldingsOfAsset");
+  logTimesInNewYorkAndLocalTimezone();
+
+  try {
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
+    await alpaca.closePosition(symbol);
+    console.log(`Submitted request to close all holdings of ${symbol}`);
+    console.log("Alpaca Order End - alpacaCloseAllHoldingsOfAsset");
+  } catch (error) {
+    console.error("Error - alpacaSubmitMarketOrderCustomPercentage:", error);
+    throw new Error("Error - alpacaCloseAllHoldingsOfAsset unable to execute");
+  }
+};
