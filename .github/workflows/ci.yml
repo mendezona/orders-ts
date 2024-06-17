@@ -17,6 +17,8 @@ env:
   ALPACA_PAPER_KEY: "fakeKey"
   ALPACA_PAPER_SECRET: "fakeKey"
   SENTRY_AUTH_TOKEN: "fakeToken"
+  ALPACA_TRADINGVIEW_SYMBOLS: "{}"
+  ALPACA_TRADINGVIEW_INVERSE_PAIRS: "{}"
 
 jobs:
   build:
