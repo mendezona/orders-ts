@@ -7,3 +7,4 @@ This project utilises the following dependencies:
 - Alpaca API
 - Sentry
 - PostgreSQL database
+- Upstash

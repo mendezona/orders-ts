@@ -1,27 +1,22 @@
 import * as Sentry from "@sentry/nextjs";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
+import { NextResponse } from "next/server";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+const handler = async (_req: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
-
-  if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-
   try {
-    return res.status(200).json({
-      message: "Price check at next interval successful",
-    });
+    return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error) {
     Sentry.captureException(error);
-    console.error(error);
-
-    return res.status(500).json({
-      error: "There was an error",
-    });
+    console.error(
+      "Endpoint error - alpaca/checkpriceatnextinterval, error scheduling cron job:",
+      error,
+    );
+    return NextResponse.json(
+      { message: "There was an error with alpace/checkpriceatnextinterval" },
+      { status: 500 },
+    );
   }
-}
+};
+
+export const POST = verifySignatureAppRouter(handler);
