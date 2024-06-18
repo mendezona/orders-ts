@@ -228,6 +228,9 @@ export const alpacaAreHoldingsClosed = async (
   symbol: string,
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
 ): Promise<boolean> => {
+  console.log(
+    `alpacaAreHoldingsClosed - Checking if holdings for ${symbol} are closed`,
+  );
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");
@@ -248,11 +251,16 @@ export const alpacaAreHoldingsClosed = async (
       }
     }
 
-    console.log(`All positions for ${symbol} have been closed`);
+    console.log(
+      `alpacaAreHoldingsClosed - All positions for ${symbol} have been closed`,
+    );
     return true;
   } catch (error) {
     Sentry.captureException(error);
-    console.error(`Error - position data for ${symbol}:`, error);
+    console.error(
+      `alpacaAreHoldingsClosed - Error, position data for ${symbol}:`,
+      error,
+    );
     throw error;
   }
 };

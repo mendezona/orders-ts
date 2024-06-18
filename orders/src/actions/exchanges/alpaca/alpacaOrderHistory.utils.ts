@@ -24,6 +24,9 @@ export const alpacaCheckLastFilledOrderType = async (
   symbol: string,
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
 ): Promise<OrderSide> => {
+  console.log(
+    `alpacaCheckLastFilledOrderType - Checking last filled order for ${symbol}`,
+  );
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");
@@ -61,7 +64,7 @@ export const alpacaCheckLastFilledOrderType = async (
     const orderSide: OrderSide =
       lastFilledOrder.side === OrderSide.BUY ? OrderSide.BUY : OrderSide.SELL;
 
-    console.log("Last order was a", orderSide);
+    console.log(`Last order for ${symbol} was a `, orderSide);
     return orderSide;
   } catch (error) {
     Sentry.captureException(error);

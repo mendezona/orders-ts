@@ -78,7 +78,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
   logTimesInNewYorkAndLocalTimezone();
 
-  // Check if there is an inverse order open
+  // IMPORTANT: Symbols will automatically be flipped if the current symbol is the inverse of the tradingViewSymbol
   const alpacaSymbol: string | undefined = buyAlert
     ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol]
     : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol];
@@ -92,27 +92,30 @@ export const alpacaSubmitPairTradeOrder = async ({
     );
   }
 
+  console.log("alpacaSymbol", alpacaSymbol);
+  console.log("alpacaInverseSymbol", alpacaInverseSymbol);
+
   /**
-   *  If there is no sell order found for inverse pair symbol,
-   *  sell all holdings of the inverse pair and save CGT to database
-   *  Assumes there is only one order open at a time for a given symbol
+   *  If there is no sell order found for currentsymbol, sell all holdings and save CGT to database.
+   *
+   * Assumes there is only one order open at a time for a given symbol
    **/
   if (
-    (await alpacaCheckLastFilledOrderType(alpacaInverseSymbol, accountName)) ===
+    (await alpacaCheckLastFilledOrderType(alpacaSymbol, accountName)) ===
     OrderSide.BUY
   ) {
     if (isOutsideNasdaqTradingHours()) {
       const assetBalance: Decimal = (
-        await alpacaGetAvailableAssetBalance(alpacaInverseSymbol)
+        await alpacaGetAvailableAssetBalance(alpacaSymbol)
       ).qty;
       await alpacaSubmitLimitOrderCustomQuantity({
-        alpacaSymbol: alpacaInverseSymbol,
+        alpacaSymbol: alpacaSymbol,
         quantity: assetBalance,
         buySideOrder: false,
         setSlippagePercentage: new Decimal("0.01"),
       } as AlpacaSubmitLimitOrderCustomQuantityParams);
     } else {
-      await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+      await alpacaCloseAllHoldingsOfAsset(alpacaSymbol, accountName);
     }
   }
 
@@ -120,7 +123,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   const timeout = 10;
   const startTime: number = Date.now();
   while ((Date.now() - startTime) / 1000 < timeout) {
-    if (await alpacaAreHoldingsClosed(alpacaInverseSymbol, accountName)) {
+    if (await alpacaAreHoldingsClosed(alpacaSymbol, accountName)) {
       break;
     }
     await wait(1000);
@@ -129,7 +132,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   // Calculate and save tax, if applicable
   if (calculateTax) {
     const profitLossAmount: Decimal = await alpacaCalculateProfitLoss(
-      alpacaInverseSymbol,
+      alpacaSymbol,
       accountName,
     );
     const taxAmount: Decimal = profitLossAmount.times(
@@ -139,7 +142,7 @@ export const alpacaSubmitPairTradeOrder = async ({
 
     if (taxAmount.gt(0)) {
       await saveSellTradeToDatabaseSellTable({
-        symbol: alpacaInverseSymbol,
+        symbol: alpacaSymbol,
         profitOrLossAmount: profitLossAmount.toString(),
         taxableAmount: taxAmount.toString(),
         buyAlert,
@@ -149,13 +152,13 @@ export const alpacaSubmitPairTradeOrder = async ({
 
   if (isOutsideNasdaqTradingHours()) {
     await alpacaSubmitLimitOrderCustomPercentage({
-      alpacaSymbol,
+      alpacaSymbol: alpacaInverseSymbol,
       capitalPercentageToDeploy,
       setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
       accountName,
     } as AlpacaSubmitLimitOrderCustomPercentageParams);
   } else {
-    await alpacaCloseAllHoldingsOfAsset(alpacaSymbol, accountName);
+    await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
   }
   await saveBuyTradeToDatabaseFlipTradeAlertTable({
     exchange: EXCHANGES.ALPACA,

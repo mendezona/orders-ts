@@ -8,6 +8,7 @@ const tradingViewAlertSchema = z.object({
   authenticationToken: z.string(),
   ticker: z.string(),
   closePrice: z.string(),
+  interval: z.string(),
 });
 
 export async function POST(request: Request) {
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     await alpacaSubmitPairTradeOrder({
       tradingViewSymbol: tradingViewAlert.ticker,
       tradingViewPrice: tradingViewAlert.closePrice,
+      tradingViewInterval: tradingViewAlert.interval,
     });
 
     return new Response(
