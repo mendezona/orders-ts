@@ -4,7 +4,7 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
-import { getLatestProfitAmountCurrentFinancialYear } from "~/server/queries";
+import { getLatestTaxAmountCurrentFinancialYear } from "~/server/queries";
 import { DEVELOPMENT_MODE } from "../../actions.constants";
 import {
   ALPACA_ACCOUNTS,
@@ -76,7 +76,7 @@ export const alpacaGetAccountBalance = async (
   try {
     const account = (await alpaca.getAccount()) satisfies TradeAccount;
     const currentProfitAmount: string =
-      await getLatestProfitAmountCurrentFinancialYear();
+      await getLatestTaxAmountCurrentFinancialYear();
     const runningTotalOfTaxableProfits: Decimal = new Decimal(
       currentProfitAmount,
     );

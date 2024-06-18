@@ -14,7 +14,7 @@ import {
   type SaveSellTradeToDatabaseSellTableProps,
 } from "./queries.types";
 
-export const getLatestProfitAmountCurrentFinancialYear =
+export const getLatestTaxAmountCurrentFinancialYear =
   async (): Promise<string> => {
     try {
       const { startOfYear, endOfYear } = getFinancialYearDates();
@@ -25,7 +25,7 @@ export const getLatestProfitAmountCurrentFinancialYear =
           and(
             gte(sellTrades.tradeTime, startOfYear),
             lte(sellTrades.tradeTime, endOfYear),
-            gt(sellTrades.profitOrLossAmount, "0"),
+            gt(sellTrades.taxableAmount, "0"),
           ),
         );
 
@@ -33,11 +33,11 @@ export const getLatestProfitAmountCurrentFinancialYear =
         return "0";
       }
 
-      const totalProfit = profitableTrades.reduce((sum, trade) => {
-        return sum.plus(new Decimal(trade.profitOrLossAmount));
+      const totalTaxAmount = profitableTrades.reduce((sum, trade) => {
+        return sum.plus(new Decimal(trade.taxableAmount ?? 0));
       }, new Decimal(0));
 
-      return totalProfit.toFixed(2);
+      return totalTaxAmount.toFixed(2);
     } catch (error) {
       Sentry.captureException(error);
       throw error;

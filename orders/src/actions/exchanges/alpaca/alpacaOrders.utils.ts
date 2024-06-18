@@ -135,9 +135,9 @@ export const alpacaSubmitPairTradeOrder = async ({
       alpacaSymbol,
       accountName,
     );
-    const taxAmount: Decimal = profitLossAmount.times(
-      EXCHANGE_CAPITAL_GAINS_TAX_RATE,
-    );
+    const taxAmount: Decimal = profitLossAmount
+      .times(EXCHANGE_CAPITAL_GAINS_TAX_RATE)
+      .toDecimalPlaces(2, Decimal.ROUND_UP);
     console.log("tax_amount", profitLossAmount.toString(), "\n");
 
     if (taxAmount.gt(0)) {
