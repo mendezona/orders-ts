@@ -90,30 +90,44 @@ export const alpacaCalculateProfitLoss = async (
   const orders: Order[] = await alpaca.getOrders({
     symbols: symbol,
     status: QueryOrderStatus.CLOSED,
-    limit: 5,
+    limit: 10,
     until: null,
     after: null,
     direction: null,
     nested: null,
   });
 
-  // Find the most recent sell order
-  const recentSellOrder: Order | undefined = [...orders]
-    .reverse()
-    .find((order) => order.side === OrderSide.SELL);
+  // Find accumulated sale amount (could be split in multiple orders)
+  let accumulatedSellQuantity: Decimal = new Decimal(0);
+  let totalSellValue: Decimal = new Decimal(0);
+  let firstBuyOrderFound = false;
 
-  if (!recentSellOrder?.filled_avg_price || !recentSellOrder.filled_qty) {
-    throw new Error("No recent sell order found.");
+  for (const order of [...orders]) {
+    if (order.side === OrderSide.BUY) {
+      firstBuyOrderFound = true;
+      break;
+    }
+
+    if (!firstBuyOrderFound && order.side === OrderSide.SELL) {
+      const filledQty = new Decimal(order.filled_qty ?? 0);
+      const filledAvgPrice = new Decimal(order.filled_avg_price ?? 0);
+      const sellValue = !!order.notional
+        ? new Decimal(order.notional)
+        : filledQty.times(filledAvgPrice);
+      totalSellValue = totalSellValue.plus(sellValue);
+      accumulatedSellQuantity = accumulatedSellQuantity.plus(filledQty);
+    }
   }
 
-  const sellQuantityNeeded: Decimal = new Decimal(recentSellOrder.filled_qty);
-  const avgSellPrice: Decimal = new Decimal(recentSellOrder.filled_avg_price);
-  const sellPrice: Decimal = sellQuantityNeeded.times(avgSellPrice);
+  console.log(
+    `Sell price: ${totalSellValue.toString()}, and sell quantity: ${accumulatedSellQuantity.toString()}`,
+  );
+
+  const sellQuantityNeeded: Decimal = accumulatedSellQuantity;
   let accumulatedBuyQuantity: Decimal = new Decimal(0);
   let totalBuyCost: Decimal = new Decimal(0);
 
-  // Accumulate buy orders starting from the most recent
-  for (const order of [...orders].reverse()) {
+  for (const order of [...orders]) {
     if (order.side === OrderSide.BUY) {
       if (!!order.filled_qty && !!order.filled_avg_price) {
         const buyQuantity = new Decimal(order.filled_qty);
@@ -140,11 +154,11 @@ export const alpacaCalculateProfitLoss = async (
     throw new Error("Not enough buy orders to match the sell quantity.");
   }
 
-  console.log("Buy price", totalBuyCost.toString());
-  console.log("Sell price", sellPrice.toString());
+  console.log("Buy price:", totalBuyCost.toString());
+  console.log("Sell price:", totalSellValue.toString());
 
   // Calculate profit or loss
-  const profitLoss: Decimal = totalBuyCost.minus(sellPrice);
+  const profitLoss: Decimal = totalBuyCost.minus(totalSellValue);
   console.log("Profit Loss:", profitLoss.toString());
   return profitLoss;
 };
