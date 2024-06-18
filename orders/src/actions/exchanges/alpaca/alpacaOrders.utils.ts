@@ -78,7 +78,9 @@ export const alpacaSubmitPairTradeOrder = async ({
   console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
   logTimesInNewYorkAndLocalTimezone();
 
-  // IMPORTANT: Symbols will automatically be flipped if the current symbol is the inverse of the tradingViewSymbol
+  // IMPORTANT: Symbols will automatically be flipped if the current symbol is the inverse of the tradingViewSymbol.
+  // Eg. alpacaSymbol will also be the asset to purchase.
+  // Eg. alpacaInverseSymbol will be the inverse stock to sell (potential current holding).
   const alpacaSymbol: string | undefined = buyAlert
     ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol]
     : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol];
