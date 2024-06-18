@@ -103,28 +103,28 @@ export const alpacaSubmitPairTradeOrder = async ({
    * Assumes there is only one order open at a time for a given symbol
    **/
   if (
-    (await alpacaCheckLastFilledOrderType(alpacaSymbol, accountName)) ===
+    (await alpacaCheckLastFilledOrderType(alpacaInverseSymbol, accountName)) ===
     OrderSide.BUY
   ) {
     if (isOutsideNasdaqTradingHours()) {
       const assetBalance: Decimal = (
-        await alpacaGetAvailableAssetBalance(alpacaSymbol)
+        await alpacaGetAvailableAssetBalance(alpacaInverseSymbol)
       ).qty;
       await alpacaSubmitLimitOrderCustomQuantity({
-        alpacaSymbol: alpacaSymbol,
+        alpacaSymbol: alpacaInverseSymbol,
         quantity: assetBalance,
         buySideOrder: false,
         setSlippagePercentage: new Decimal("0.01"),
       } as AlpacaSubmitLimitOrderCustomQuantityParams);
     } else {
-      await alpacaCloseAllHoldingsOfAsset(alpacaSymbol, accountName);
+      await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
     }
 
     // Wait 10 seconds for trades to close
     const timeout = 10;
     const startTime: number = Date.now();
     while ((Date.now() - startTime) / 1000 < timeout) {
-      if (await alpacaAreHoldingsClosed(alpacaSymbol, accountName)) {
+      if (await alpacaAreHoldingsClosed(alpacaInverseSymbol, accountName)) {
         break;
       }
       await wait(1000);
@@ -133,7 +133,7 @@ export const alpacaSubmitPairTradeOrder = async ({
     // Calculate and save tax, if applicable
     if (calculateTax) {
       const profitLossAmount: Decimal = await alpacaCalculateProfitLoss(
-        alpacaSymbol,
+        alpacaInverseSymbol,
         accountName,
       );
       const taxAmount: Decimal = profitLossAmount
@@ -143,7 +143,7 @@ export const alpacaSubmitPairTradeOrder = async ({
 
       if (taxAmount.gt(0)) {
         await saveSellTradeToDatabaseSellTable({
-          symbol: alpacaSymbol,
+          symbol: alpacaInverseSymbol,
           profitOrLossAmount: profitLossAmount.toString(),
           taxableAmount: taxAmount.toString(),
           buyAlert,
@@ -154,14 +154,14 @@ export const alpacaSubmitPairTradeOrder = async ({
 
   if (isOutsideNasdaqTradingHours()) {
     await alpacaSubmitLimitOrderCustomPercentage({
-      alpacaSymbol: alpacaInverseSymbol,
+      alpacaSymbol: alpacaSymbol,
       capitalPercentageToDeploy,
       setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
       accountName,
     } as AlpacaSubmitLimitOrderCustomPercentageParams);
   } else {
     await alpacaSubmitMarketOrderCustomPercentage({
-      alpacaSymbol: alpacaInverseSymbol,
+      alpacaSymbol: alpacaSymbol,
       capitalPercentageToDeploy,
       accountName,
     } as AlpacaSubmitMarketOrderCustomPercentageParams);
