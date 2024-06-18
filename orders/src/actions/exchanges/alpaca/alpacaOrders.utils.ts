@@ -27,7 +27,6 @@ import {
 } from "./alpaca.constants";
 import {
   type AlpacaGetLatestQuote,
-  type AlpacaSchedulePriceCheckAtNextInternalCronJobParams,
   type AlpacaSubmitLimitOrderCustomPercentageParams,
   type AlpacaSubmitLimitOrderCustomQuantityParams,
   type AlpacaSubmitMarketOrderCustomPercentageParams,
@@ -181,7 +180,8 @@ export const alpacaSubmitPairTradeOrder = async ({
       tradingViewSymbol,
       tradingViewPrice,
       tradingViewInterval,
-    } as AlpacaSchedulePriceCheckAtNextInternalCronJobParams);
+      buyAlert,
+    });
   }
 };
 
