@@ -31,6 +31,9 @@ export const alpacaIsAssetFractionable = async (
   symbol: string,
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
 ): Promise<boolean> => {
+  console.log(
+    `alpacaIsAssetFractionable - checking if ${symbol} is fractionable`,
+  );
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");
@@ -44,12 +47,10 @@ export const alpacaIsAssetFractionable = async (
 
   try {
     const asset: Asset = (await alpaca.getAsset(symbol)) satisfies Asset;
-    if (!asset.fractionable) {
-      throw new Error("Unable to determine if asset is fractionable");
-    }
     console.log(`${symbol} fractionable:`, asset.fractionable);
     return asset.fractionable;
   } catch (error) {
+    Sentry.captureException(error);
     console.error(
       `Error - Unable to determine if asset is fractionable:`,
       error,
@@ -171,53 +172,70 @@ export const alpacaGetLatestQuote = async (
     paper: credentials.paper,
   });
 
-  try {
-    const getLatestQuoteData: AlpacaQuote = await alpaca.getLatestQuote(symbol);
-    if (!!getLatestQuoteData.BidPrice || !!getLatestQuoteData.AskPrice) {
-      const convertedQuoteData: AlpacaGetLatestQuote = {
-        askPrice: new Decimal(getLatestQuoteData.AskPrice),
-        bidPrice: new Decimal(getLatestQuoteData.BidPrice),
-        askSize: new Decimal(getLatestQuoteData.AskSize),
-        bidSize: new Decimal(getLatestQuoteData.BidSize),
-      };
+  let attempts = 0;
+  const maxAttempts = 3;
 
-      console.log(
-        "Quote Method 1 - Latest quote data found:",
-        getLatestQuoteData,
+  while (attempts < maxAttempts) {
+    try {
+      const getLatestQuoteData: AlpacaQuote =
+        await alpaca.getLatestQuote(symbol);
+      if (!!getLatestQuoteData.BidPrice || !!getLatestQuoteData.AskPrice) {
+        const convertedQuoteData: AlpacaGetLatestQuote = {
+          askPrice: new Decimal(getLatestQuoteData.AskPrice),
+          bidPrice: new Decimal(getLatestQuoteData.BidPrice),
+          askSize: new Decimal(getLatestQuoteData.AskSize),
+          bidSize: new Decimal(getLatestQuoteData.BidSize),
+        };
+
+        console.log(
+          "Quote Method 1 - Latest quote data found:",
+          getLatestQuoteData,
+        );
+        return convertedQuoteData;
+      }
+
+      // // Backup method: getQuotesV2
+      // const quotesParams: GetQuotesParams = {
+      //   start: getStartOfCurrentTradingDay(),
+      //   limit: 1,
+      // };
+      // const getQuotesData = alpaca.getQuotesV2(symbol, quotesParams);
+      // for await (const quote of getQuotesData) {
+      //   if (quote.BidPrice !== undefined || quote.AskPrice !== undefined) {
+      //     const convertedQuoteData: AlpacaGetLatestQuote = {
+      //       askPrice: new Decimal(quote.AskPrice),
+      //       bidPrice: new Decimal(quote.BidPrice),
+      //       askSize: new Decimal(quote.AskSize),
+      //       bidSize: new Decimal(quote.BidSize),
+      //     };
+
+      //     console.log("Quote Method 2 - Quote data found:", convertedQuoteData);
+      //     return convertedQuoteData;
+      //   }
+      // }
+    } catch (error) {
+      attempts++;
+      console.error(
+        `alpacaGetLatestQuote - Attempt ${attempts} failed:`,
+        error,
       );
-      return convertedQuoteData;
+      if (attempts === maxAttempts) {
+        Sentry.captureException(error);
+        console.error(
+          `alpacaGetLatestQuote - An error occurred while fetching quote data for ${symbol}:`,
+          error,
+        );
+        throw error;
+      }
     }
-
-    // // Backup method: getQuotesV2
-    // const quotesParams: GetQuotesParams = {
-    //   start: getStartOfCurrentTradingDay(),
-    //   limit: 1,
-    // };
-    // const getQuotesData = alpaca.getQuotesV2(symbol, quotesParams);
-    // for await (const quote of getQuotesData) {
-    //   if (quote.BidPrice !== undefined || quote.AskPrice !== undefined) {
-    //     const convertedQuoteData: AlpacaGetLatestQuote = {
-    //       askPrice: new Decimal(quote.AskPrice),
-    //       bidPrice: new Decimal(quote.BidPrice),
-    //       askSize: new Decimal(quote.AskSize),
-    //       bidSize: new Decimal(quote.BidSize),
-    //     };
-
-    //     console.log("Quote Method 2 - Quote data found:", convertedQuoteData);
-    //     return convertedQuoteData;
-    //   }
-    // }
-
-    console.error(`An error occurred while fetching quote data for ${symbol}`);
-    throw new Error(`Error - quote data for ${symbol} not found`);
-  } catch (error) {
-    Sentry.captureException(error);
-    console.error(
-      `An error occurred while fetching quote data for ${symbol}:`,
-      error,
-    );
-    throw error;
   }
+
+  console.error(
+    `alpacaGetLatestQuote - An error occurred while fetching quote data for ${symbol}`,
+  );
+  throw new Error(
+    `alpacaGetLatestQuote - Error,quote data for ${symbol} not found`,
+  );
 };
 
 /**
