@@ -70,6 +70,10 @@ export const alpacaCalculateProfitLoss = async (
   symbol: string,
   accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
 ): Promise<Decimal> => {
+  console.log(
+    "alpacaCalculateProfitLoss - start calculating profit/loss for",
+    symbol,
+  );
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
     throw new Error("Alpaca account credentials not found");

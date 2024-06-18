@@ -117,36 +117,36 @@ export const alpacaSubmitPairTradeOrder = async ({
     } else {
       await alpacaCloseAllHoldingsOfAsset(alpacaSymbol, accountName);
     }
-  }
 
-  // Wait 10 seconds for trades to close
-  const timeout = 10;
-  const startTime: number = Date.now();
-  while ((Date.now() - startTime) / 1000 < timeout) {
-    if (await alpacaAreHoldingsClosed(alpacaSymbol, accountName)) {
-      break;
+    // Wait 10 seconds for trades to close
+    const timeout = 10;
+    const startTime: number = Date.now();
+    while ((Date.now() - startTime) / 1000 < timeout) {
+      if (await alpacaAreHoldingsClosed(alpacaSymbol, accountName)) {
+        break;
+      }
+      await wait(1000);
     }
-    await wait(1000);
-  }
 
-  // Calculate and save tax, if applicable
-  if (calculateTax) {
-    const profitLossAmount: Decimal = await alpacaCalculateProfitLoss(
-      alpacaSymbol,
-      accountName,
-    );
-    const taxAmount: Decimal = profitLossAmount
-      .times(EXCHANGE_CAPITAL_GAINS_TAX_RATE)
-      .toDecimalPlaces(2, Decimal.ROUND_UP);
-    console.log("tax_amount", profitLossAmount.toString(), "\n");
+    // Calculate and save tax, if applicable
+    if (calculateTax) {
+      const profitLossAmount: Decimal = await alpacaCalculateProfitLoss(
+        alpacaSymbol,
+        accountName,
+      );
+      const taxAmount: Decimal = profitLossAmount
+        .times(EXCHANGE_CAPITAL_GAINS_TAX_RATE)
+        .toDecimalPlaces(2, Decimal.ROUND_UP);
+      console.log("tax_amount", profitLossAmount.toString(), "\n");
 
-    if (taxAmount.gt(0)) {
-      await saveSellTradeToDatabaseSellTable({
-        symbol: alpacaSymbol,
-        profitOrLossAmount: profitLossAmount.toString(),
-        taxableAmount: taxAmount.toString(),
-        buyAlert,
-      } as SaveSellTradeToDatabaseSellTableProps);
+      if (taxAmount.gt(0)) {
+        await saveSellTradeToDatabaseSellTable({
+          symbol: alpacaSymbol,
+          profitOrLossAmount: profitLossAmount.toString(),
+          taxableAmount: taxAmount.toString(),
+          buyAlert,
+        } as SaveSellTradeToDatabaseSellTableProps);
+      }
     }
   }
 
@@ -158,8 +158,13 @@ export const alpacaSubmitPairTradeOrder = async ({
       accountName,
     } as AlpacaSubmitLimitOrderCustomPercentageParams);
   } else {
-    await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+    await alpacaSubmitMarketOrderCustomPercentage({
+      alpacaSymbol: alpacaInverseSymbol,
+      capitalPercentageToDeploy,
+      accountName,
+    } as AlpacaSubmitMarketOrderCustomPercentageParams);
   }
+
   await saveBuyTradeToDatabaseFlipTradeAlertTable({
     exchange: EXCHANGES.ALPACA,
     symbol: tradingViewSymbol,
