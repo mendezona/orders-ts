@@ -1,6 +1,9 @@
+import Alpaca from "@alpacahq/alpaca-trade-api";
 import dayjs, { type Dayjs } from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { alpacaGetCredentials } from "./alpacaAccount.utils";
+import { type AlpacaCalendar } from "./alpacaApi.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -13,47 +16,125 @@ dayjs.extend(timezone);
  *
  * @returns A Dayjs object representing the next time to schedule the cron job.
  */
-export const alpacaGetNextIntervalTime = (
+export const alpacaGetNextIntervalTime = async (
   now: Dayjs,
   intervalMinutes: number,
-): Dayjs => {
-  const tradingStart = 4 * 60; // 4:00 AM in minutes
-  const tradingEnd = 19 * 60 + 45; // 7:45 PM in minutes
+): Promise<Dayjs> => {
+  const credentials = alpacaGetCredentials();
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  const alpaca = new Alpaca({
+    keyId: credentials.key,
+    secretKey: credentials.secret,
+    paper: credentials.paper,
+  });
+
+  // Get the trading calendar for the current date
+  const calendar: AlpacaCalendar[] = (await alpaca.getCalendar({
+    start: now.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+    end: now.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+  })) as AlpacaCalendar[];
+
+  if (calendar[0] === undefined) {
+    throw new Error("No trading calendar found for today.");
+  }
+
+  const currentNYTime = dayjs().tz("America/New_York");
+  const tradingDay: AlpacaCalendar = calendar[0];
+  const tradingDate = dayjs(tradingDay.date).tz("America/New_York");
+
+  const tradingStart: dayjs.Dayjs = tradingDate
+    .set("hour", parseInt(tradingDay.session_open.slice(0, 2), 10))
+    .set("minute", parseInt(tradingDay.session_open.slice(2, 4), 10))
+    .set("second", 0)
+    .set("millisecond", 0);
+
+  const tradingEnd: dayjs.Dayjs = tradingDate
+    .set("hour", parseInt(tradingDay.session_close.slice(0, 2), 10))
+    .set("minute", parseInt(tradingDay.session_close.slice(2, 4), 10))
+    .set("second", 0)
+    .set("millisecond", 0);
 
   console.log(
-    `Trading start: ${tradingStart} minutes, Trading end: ${tradingEnd} minutes`,
+    `Trading start: ${tradingStart.format(
+      "HH:mm:ss",
+    )}, Trading end: ${tradingEnd.format("HH:mm:ss")}`,
   );
 
   // Calculate the next interval time within the trading day
   for (
-    let minutes = tradingStart;
-    minutes < tradingEnd;
+    let minutes = tradingStart.hour() * 60 + tradingStart.minute();
+    minutes < tradingEnd.hour() * 60 + tradingEnd.minute();
     minutes += intervalMinutes
   ) {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    const intervalTime = now
-      .tz("America/New_York")
+    const intervalTime = currentNYTime
       .set("hour", hours)
       .set("minute", mins)
       .set("second", 0)
       .set("millisecond", 0);
 
     // If the interval time is after the current time, it is a valid next interval
-    if (intervalTime.isAfter(now)) {
+    if (intervalTime.isAfter(currentNYTime)) {
       console.log(`Next interval time: ${intervalTime.toString()}`);
       return intervalTime;
     }
   }
 
-  // If all times have passed today, schedule for the first interval tomorrow at 4:15 AM
-  const nextTime = now
-    .tz("America/New_York")
+  // If all times have passed today, schedule for the first interval of the next trading day at 4:15 AM
+  const nextTradingDay = await alpacaGetNextAvailableTradingDay(now);
+  const nextTime = nextTradingDay
     .set("hour", 4)
     .set("minute", 15)
     .set("second", 0)
-    .set("millisecond", 0)
-    .add(1, "day");
-  console.log("All times have passed today, scheduling for 4:15 AM tomorrow");
+    .set("millisecond", 0);
+
+  console.log(
+    "All times have passed today, scheduling for 4:15 AM on the next trading day on",
+    nextTime.toString(),
+  );
   return nextTime;
+};
+
+/**
+ * Gets the next available trading day using the Alpaca JS SDK.
+ *
+ * @param date - The current date.
+ *
+ * @returns A Dayjs object representing the next available trading day.
+ */
+export const alpacaGetNextAvailableTradingDay = async (
+  date: Dayjs,
+): Promise<Dayjs> => {
+  const credentials = alpacaGetCredentials();
+  if (!credentials) {
+    throw new Error("Alpaca account credentials not found");
+  }
+
+  const alpaca: Alpaca = new Alpaca({
+    keyId: credentials.key,
+    secretKey: credentials.secret,
+    paper: credentials.paper,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const calendar = (await alpaca.getCalendar({
+    start: date.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+    end: date.add(7, "day").format("YYYY-MM-DDTHH:mm:ss[Z]"),
+  })) as AlpacaCalendar[];
+
+  for (const day of calendar) {
+    const tradingDay = dayjs(day.date).tz("America/New_York");
+    if (tradingDay.isAfter(date)) {
+      console.log("Found next available trading day:", tradingDay);
+      return tradingDay;
+    }
+  }
+
+  throw new Error(
+    "Error - alpacaGetNextAvailableTradingDay - No trading days available in the next 7 days.",
+  );
 };

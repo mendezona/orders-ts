@@ -46,7 +46,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
   // Get the next interval time
   const now = dayjs.utc();
   console.log(`Current UTC time: ${now.toISOString()}`);
-  const nextTime = alpacaGetNextIntervalTime(
+  const nextTime = await alpacaGetNextIntervalTime(
     now,
     parseInt(tradingViewInterval, 10),
   );

@@ -299,4 +299,13 @@ export enum AssetStatus {
   INACTIVE = "inactive",
 }
 
+export interface AlpacaCalendar {
+  date: string;
+  open: string;
+  close: string;
+  session_open: string;
+  session_close: string;
+  settlement_date: string;
+}
+
 export type RawData = Record<string, unknown>;
