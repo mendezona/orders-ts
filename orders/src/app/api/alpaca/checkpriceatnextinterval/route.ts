@@ -1,23 +1,30 @@
 import * as Sentry from "@sentry/nextjs";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
-import { type AlpacaCheckLatestPriceAndReverseTradeCronJobParams } from "~/actions/exchanges/alpaca/alpaca.types";
+import { z } from "zod";
 import { alpacaCheckLatestPriceAndReverseTradeCronJob } from "~/actions/exchanges/alpaca/alpacaCronJobs";
 
 export const dynamic = "force-dynamic";
 
+const alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema = z.object({
+  tradingViewSymbol: z.string(),
+  buyAlert: z.boolean(),
+});
+
 export const POST = verifySignatureAppRouter(async (request: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const json = await request.json();
     const data =
-      (await request.json()) satisfies AlpacaCheckLatestPriceAndReverseTradeCronJobParams;
+      alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema.parse(json);
     console.log("checkpriceatnextinterval: data", data);
+
     await alpacaCheckLatestPriceAndReverseTradeCronJob({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       tradingViewSymbol: data.tradingViewSymbol,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       buyAlert: data.buyAlert,
-    } as AlpacaCheckLatestPriceAndReverseTradeCronJobParams);
+    });
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
@@ -25,16 +32,28 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
       },
     });
   } catch (error) {
-    Sentry.captureException(error);
-    console.error(
-      "Endpoint error - alpaca/checkpriceatnextinterval, error scheduling cron job:",
-      error,
-    );
-    return new Response(JSON.stringify({ success: false }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    if (error instanceof z.ZodError) {
+      Sentry.captureException(error);
+      console.error("Validation error:", error.errors);
+      return new Response(
+        JSON.stringify({
+          error: "Invalid request data",
+          details: error.errors,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    } else {
+      Sentry.captureException(error);
+      console.error(
+        "Endpoint error - alpaca/checkpriceatnextinterval, error scheduling cron job:",
+        error,
+      );
+      return new Response(JSON.stringify({ success: false }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
   }
 });

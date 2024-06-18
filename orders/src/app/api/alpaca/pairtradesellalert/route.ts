@@ -1,29 +1,49 @@
 import * as Sentry from "@sentry/nextjs";
+import { z } from "zod";
 import { alpacaSubmitPairTradeOrder } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
-import { type TradingViewAlert } from "~/actions/exchanges/exchanges.types";
 
-export const dynamic = "force-dynamic"; // Ensuring the API route is dynamic
+export const dynamic = "force-dynamic";
+
+const tradingViewAlertSchema = z.object({
+  authenticationToken: z.string(),
+  ticker: z.string(),
+  closePrice: z.string(),
+});
 
 export async function POST(request: Request) {
-  console.log("API called - alpaca/pairtradesellalert");
-
+  console.log("Endpoint called - alpaca/pairtradebuyalert");
   const validAuthenticationToken = process.env.TRADINGVIEW_AUTH_TOKEN;
 
-  let tradingViewAlert: TradingViewAlert;
+  let tradingViewAlert;
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    tradingViewAlert = await request.json();
+    const json = await request.json();
+    tradingViewAlert = tradingViewAlertSchema.parse(json);
   } catch (error) {
-    Sentry.captureException(error);
-    console.error("Error parsing request body:", error);
-    return new Response(JSON.stringify({ error: "Invalid request body" }), {
-      status: 400,
-    });
+    if (error instanceof z.ZodError) {
+      Sentry.captureException(error);
+      console.error("Validation error:", error.errors);
+      return new Response(
+        JSON.stringify({
+          error: "Invalid request data",
+          details: error.errors,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    } else {
+      Sentry.captureException(error);
+      console.error("Error parsing request body:", error);
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   }
 
   if (tradingViewAlert.authenticationToken !== validAuthenticationToken) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), {
       status: 401,
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -31,13 +51,12 @@ export async function POST(request: Request) {
     await alpacaSubmitPairTradeOrder({
       tradingViewSymbol: tradingViewAlert.ticker,
       tradingViewPrice: tradingViewAlert.closePrice,
-      buyAlert: false,
     });
 
     return new Response(
       JSON.stringify({
         message:
-          "Endpoint success - alpaca/pairtradesellalert - sell order submitted",
+          "Endpoint success - alpaca/pairtradebuyalert - buy order submitted",
       }),
       {
         status: 200,
@@ -49,7 +68,7 @@ export async function POST(request: Request) {
   } catch (error) {
     Sentry.captureException(error);
     console.error(
-      "Endpoint error - alpaca/pairtradesellalert, error processing trade order:",
+      "Endpoint error - alpaca/pairtradebuyalert, error processing trade order:",
       error,
     );
 
