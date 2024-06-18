@@ -155,11 +155,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       accountName,
     } as AlpacaSubmitLimitOrderCustomPercentageParams);
   } else {
-    await alpacaSubmitMarketOrderCustomPercentage({
-      alpacaSymbol,
-      capitalPercentageToDeploy,
-      accountName,
-    } as AlpacaSubmitMarketOrderCustomPercentageParams);
+    await alpacaCloseAllHoldingsOfAsset(alpacaSymbol, accountName);
   }
   await saveBuyTradeToDatabaseFlipTradeAlertTable({
     exchange: EXCHANGES.ALPACA,
