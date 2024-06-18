@@ -1,11 +1,11 @@
-import { type buyTrades, type sellTrades } from "./db/schema";
+import { type flipAlerts, type sellTrades } from "./db/schema";
 
-export type BuyTrade = typeof buyTrades.$inferSelect;
+export type FlipAlert = typeof flipAlerts.$inferSelect;
 
 export type SellTrade = typeof sellTrades.$inferSelect;
 
-export type SaveSellTradeToDatabaseBuyTableProps = Omit<
-  BuyTrade,
+export type SaveBuyTradeToDatabaseFlipTradeAlertTableProps = Omit<
+  FlipAlert,
   "id" | "tradeTime"
 >;
 
@@ -14,4 +14,4 @@ export interface SaveSellTradeToDatabaseSellTableProps
   buyAlert: boolean;
 }
 
-export type BuyTableItem = Omit<BuyTrade, "id">;
+export type FlipAlertItem = Omit<FlipAlert, "id">;

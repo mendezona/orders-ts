@@ -5,8 +5,8 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import Decimal from "decimal.js";
 import { QSTASH_ALPACA_CRON_JOB_PRICE_CHECK_INTERVAL_TOPIC } from "~/actions/actions.constants";
-import { getLatestBuyTradeForSymbol } from "~/server/queries";
-import { type BuyTableItem } from "~/server/queries.types";
+import { getLatestFlipAlertForSymbol } from "~/server/queries";
+import { type FlipAlertItem } from "~/server/queries.types";
 import {
   type AlpacaCheckLatestPriceAndReverseTradeCronJobParams,
   type AlpacaSchedulePriceCheckAtNextInternalCronJobParams,
@@ -96,17 +96,19 @@ export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
     `Cron job start - alpacaCheckLatestPriceAndReverseTradeCronJob - Scheduling price check and potential reverse trade for: ${tradingViewSymbol}.`,
   );
 
-  const lastTrade: BuyTableItem =
-    await getLatestBuyTradeForSymbol(tradingViewSymbol);
-  const lastTradePrice: Decimal = new Decimal(lastTrade.price);
+  const latestFlipAlert: FlipAlertItem =
+    await getLatestFlipAlertForSymbol(tradingViewSymbol);
+  const lastTradePrice: Decimal = new Decimal(latestFlipAlert.price);
   const getQuote = await alpacaGetLatestQuote(tradingViewSymbol);
   const quotePrice: Decimal = getQuote.askPrice.gt(0)
     ? getQuote.askPrice
     : getQuote.bidPrice;
 
-  if (lastTradePrice.lessThan(quotePrice)) {
+  if (
+    (buyAlert && lastTradePrice.lessThan(quotePrice)) ||
+    (!buyAlert && lastTradePrice.greaterThan(quotePrice))
+  ) {
     console.log("Cron job end - reverse trade initiated");
-
     try {
       await alpacaSubmitPairTradeOrder({
         tradingViewSymbol: tradingViewSymbol,

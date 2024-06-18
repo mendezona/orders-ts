@@ -2,11 +2,11 @@ import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import {
-  saveBuyTradeToDatabaseBuyTable,
+  saveBuyTradeToDatabaseFlipTradeAlertTable,
   saveSellTradeToDatabaseSellTable,
 } from "~/server/queries";
 import {
-  type SaveSellTradeToDatabaseBuyTableProps,
+  type SaveBuyTradeToDatabaseFlipTradeAlertTableProps,
   type SaveSellTradeToDatabaseSellTableProps,
 } from "~/server/queries.types";
 import {
@@ -161,11 +161,11 @@ export const alpacaSubmitPairTradeOrder = async ({
       accountName,
     } as AlpacaSubmitMarketOrderCustomPercentageParams);
   }
-  await saveBuyTradeToDatabaseBuyTable({
+  await saveBuyTradeToDatabaseFlipTradeAlertTable({
     exchange: EXCHANGES.ALPACA,
-    symbol: alpacaSymbol,
+    symbol: tradingViewSymbol,
     price: tradingViewPrice,
-  } as SaveSellTradeToDatabaseBuyTableProps);
+  } as SaveBuyTradeToDatabaseFlipTradeAlertTableProps);
 
   if (scheduleCronJob) {
     if (!tradingViewInterval) {

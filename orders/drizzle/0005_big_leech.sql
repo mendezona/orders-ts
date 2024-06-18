@@ -1,0 +1,1 @@
+ALTER TABLE "orders_ts_buyTrades" RENAME TO "orders_ts_flipAlerts";

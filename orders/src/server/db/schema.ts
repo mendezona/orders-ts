@@ -18,7 +18,7 @@ import {
  */
 export const createTable = pgTableCreator((name) => `orders_ts_${name}`);
 
-export const buyTrades = createTable("buyTrades", {
+export const flipAlerts = createTable("flipAlerts", {
   id: serial("id").primaryKey(),
   exchange: text("exchange").notNull(),
   symbol: text("symbol").notNull(),

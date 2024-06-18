@@ -6,11 +6,11 @@ import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { and, desc, eq, gt, gte, lte } from "drizzle-orm";
 import { db } from "./db";
-import { buyTrades, sellTrades } from "./db/schema";
+import { flipAlerts, sellTrades } from "./db/schema";
 import { getFinancialYearDates } from "./queries.helpers";
 import {
-  type BuyTableItem,
-  type SaveSellTradeToDatabaseBuyTableProps,
+  type FlipAlertItem,
+  type SaveBuyTradeToDatabaseFlipTradeAlertTableProps,
   type SaveSellTradeToDatabaseSellTableProps,
 } from "./queries.types";
 
@@ -44,13 +44,13 @@ export const getLatestProfitAmountCurrentFinancialYear =
     }
   };
 
-export const saveBuyTradeToDatabaseBuyTable = async ({
+export const saveBuyTradeToDatabaseFlipTradeAlertTable = async ({
   exchange,
   symbol,
   price,
-}: SaveSellTradeToDatabaseBuyTableProps) => {
+}: SaveBuyTradeToDatabaseFlipTradeAlertTableProps) => {
   try {
-    await db.insert(buyTrades).values({
+    await db.insert(flipAlerts).values({
       exchange,
       symbol,
       price,
@@ -78,19 +78,19 @@ export const saveSellTradeToDatabaseSellTable = async ({
   }
 };
 
-export const getLatestBuyTradeForSymbol = async (
+export const getLatestFlipAlertForSymbol = async (
   symbol: string,
-): Promise<BuyTableItem> => {
+): Promise<FlipAlertItem> => {
   try {
-    const latestTrade = await db
+    const latestFlipAlert = await db
       .select()
-      .from(buyTrades)
-      .where(eq(buyTrades.symbol, symbol))
-      .orderBy(desc(buyTrades.tradeTime))
+      .from(flipAlerts)
+      .where(eq(flipAlerts.symbol, symbol))
+      .orderBy(desc(flipAlerts.tradeTime))
       .limit(1);
 
-    if (latestTrade.length > 0) {
-      return latestTrade[0] as BuyTableItem;
+    if (latestFlipAlert.length > 0) {
+      return latestFlipAlert[0] as FlipAlertItem;
     }
 
     throw new Error(`No trades found for symbol: ${symbol}`);
