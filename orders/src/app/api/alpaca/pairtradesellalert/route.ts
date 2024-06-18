@@ -12,7 +12,7 @@ const tradingViewAlertSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  console.log("Endpoint called - alpaca/pairtradebuyalert");
+  console.log("Endpoint called - alpaca/pairtradesellalert");
   const validAuthenticationToken = process.env.TRADINGVIEW_AUTH_TOKEN;
 
   let tradingViewAlert;
@@ -53,12 +53,13 @@ export async function POST(request: Request) {
       tradingViewSymbol: tradingViewAlert.ticker,
       tradingViewPrice: tradingViewAlert.closePrice,
       tradingViewInterval: tradingViewAlert.interval,
+      buyAlert: false,
     });
 
     return new Response(
       JSON.stringify({
         message:
-          "Endpoint success - alpaca/pairtradebuyalert - buy order submitted",
+          "Endpoint success - alpaca/pairtradesellalert - buy order submitted",
       }),
       {
         status: 200,
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
   } catch (error) {
     Sentry.captureException(error);
     console.error(
-      "Endpoint error - alpaca/pairtradebuyalert, error processing trade order:",
+      "Endpoint error - alpaca/pairtradesellalert, error processing trade order:",
       error,
     );
 
