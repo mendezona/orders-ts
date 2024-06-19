@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     const json = await request.json();
     tradingViewAlert = tradingViewAlertSchema.parse(json);
   } catch (error) {
+    Sentry.captureException(error);
     if (error instanceof z.ZodError) {
-      Sentry.captureException(error);
       console.error("Validation error:", error.errors);
       return new Response(
         JSON.stringify({
@@ -32,7 +32,6 @@ export async function POST(request: Request) {
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     } else {
-      Sentry.captureException(error);
       console.error("Error parsing request body:", error);
       return new Response(JSON.stringify({ error: "Invalid request body" }), {
         status: 400,

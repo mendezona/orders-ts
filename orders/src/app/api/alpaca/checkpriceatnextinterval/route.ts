@@ -32,8 +32,8 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
       },
     });
   } catch (error) {
+    Sentry.captureException(error);
     if (error instanceof z.ZodError) {
-      Sentry.captureException(error);
       console.error("Validation error:", error.errors);
       return new Response(
         JSON.stringify({
@@ -43,7 +43,6 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     } else {
-      Sentry.captureException(error);
       console.error(
         "Endpoint error - alpaca/checkpriceatnextinterval, error scheduling cron job:",
         error,
