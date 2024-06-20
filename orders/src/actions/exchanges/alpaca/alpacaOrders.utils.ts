@@ -1,6 +1,7 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
+import { VERCEL_MAXIMUM_SERVER_LIMIT } from "~/actions/actions.constants";
 import {
   saveBuyTradeToDatabaseFlipTradeAlertTable,
   saveSellTradeToDatabaseSellTable,
@@ -119,8 +120,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
     }
 
-    // Wait 10 seconds for trades to close
-    const timeout = 10;
+    const timeout = VERCEL_MAXIMUM_SERVER_LIMIT;
     const startTime: number = Date.now();
     while ((Date.now() - startTime) / 1000 < timeout) {
       if (await alpacaAreHoldingsClosed(alpacaInverseSymbol, accountName)) {
