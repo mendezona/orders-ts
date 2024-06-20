@@ -104,16 +104,20 @@ export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
     ? getQuote.askPrice
     : getQuote.bidPrice;
 
+  console.log(
+    `${tradingViewSymbol}, buy alert: ${buyAlert}, last trade price: ${lastTradePrice.toString()}, quote price: ${quotePrice.toString()}`,
+  );
+
   if (
-    (buyAlert && lastTradePrice.lessThan(quotePrice)) ||
-    (!buyAlert && lastTradePrice.greaterThan(quotePrice))
+    (buyAlert && lastTradePrice.greaterThan(quotePrice)) ||
+    (!buyAlert && lastTradePrice.lessThan(quotePrice))
   ) {
     console.log("Cron job - reverse trade initiated");
     try {
       await alpacaSubmitPairTradeOrder({
         tradingViewSymbol: tradingViewSymbol,
         tradingViewPrice: quotePrice.toString(),
-        buyAlert,
+        buyAlert: !buyAlert,
         scheduleCronJob: false,
       } as AlpacaSubmitPairTradeOrderParams);
 

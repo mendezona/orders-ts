@@ -87,9 +87,8 @@ export const alpacaGetAccountBalance = async (
       runningTotalOfTaxableProfits,
     );
 
-    console.log("account", account);
-    console.log("equity:", equity);
-    console.log("cash:", cash);
+    console.log("Available equity minus taxable profits:", equity);
+    console.log("Available cash minus taxable profits:", cash);
 
     return {
       account,
