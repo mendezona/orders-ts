@@ -1,0 +1,1 @@
+ALTER TABLE "orders_ts_sellTrades" ADD COLUMN "manually_added" boolean DEFAULT false;

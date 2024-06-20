@@ -43,6 +43,13 @@
       "when": 1718669021299,
       "tag": "0005_big_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1718873964710,
+      "tag": "0006_wise_cargill",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@
 
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   numeric,
   pgTableCreator,
   serial,
@@ -39,4 +40,5 @@ export const sellTrades = createTable("sellTrades", {
   tradeTime: timestamp("trade_time", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
+  manuallyAdded: boolean("manually_added").default(false),
 });
