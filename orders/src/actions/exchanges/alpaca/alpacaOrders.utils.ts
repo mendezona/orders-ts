@@ -227,7 +227,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
         ? latestQuote.askPrice
         : latestQuote.bidPrice;
       limitPrice = quotePrice
-        .minus(quotePrice.times(setSlippagePercentage))
+        .add(quotePrice.times(setSlippagePercentage))
         .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
     } else {
       quotePrice = latestQuote.bidPrice.gt(0)
