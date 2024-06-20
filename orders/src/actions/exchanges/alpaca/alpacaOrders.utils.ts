@@ -354,7 +354,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
         ? latestQuote.bidPrice
         : latestQuote.askPrice;
       limitPrice = quotePrice
-        .plus(quotePrice.times(setSlippagePercentage))
+        .minus(quotePrice.times(setSlippagePercentage))
         .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
     }
   }
