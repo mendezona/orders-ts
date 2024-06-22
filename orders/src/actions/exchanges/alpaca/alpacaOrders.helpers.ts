@@ -7,7 +7,7 @@ import { type AlpacaQuote } from "@alpacahq/alpaca-trade-api/dist/resources/data
 import * as Sentry from "@sentry/nextjs";
 // import { type GetQuotesParams } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/rest_v2";
 import Decimal from "decimal.js";
-import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
+import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca.constants";
 // import getStartOfCurrentTradingDay from "./alpaca.helpers";
 import { type AlpacaGetLatestQuote } from "./alpaca.types";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
@@ -29,7 +29,7 @@ import {
  */
 export const alpacaIsAssetFractionable = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<boolean> => {
   console.log(
     `alpacaIsAssetFractionable - checking if ${symbol} is fractionable`,
@@ -69,7 +69,7 @@ export const alpacaIsAssetFractionable = async (
  */
 export const alpacaCalculateProfitLoss = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<Decimal> => {
   console.log(
     "alpacaCalculateProfitLoss - start calculating profit/loss for",
@@ -173,7 +173,7 @@ export const alpacaCalculateProfitLoss = async (
  */
 export const alpacaGetLatestQuote = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetLatestQuote> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
@@ -262,7 +262,7 @@ export const alpacaGetLatestQuote = async (
  */
 export const alpacaAreHoldingsClosed = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<boolean> => {
   console.log(
     `alpacaAreHoldingsClosed - Checking if holdings for ${symbol} are closed`,

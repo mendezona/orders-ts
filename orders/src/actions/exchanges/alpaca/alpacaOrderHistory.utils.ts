@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
-import { ALPACA_TRADING_ACCOUNT_NAME_LIVE } from "./alpaca.constants";
+import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca.constants";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import {
   OrderSide,
@@ -22,7 +22,7 @@ import {
  */
 export const alpacaCheckLastFilledOrderType = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<OrderSide> => {
   console.log(
     `alpacaCheckLastFilledOrderType - Checking last filled order for ${symbol}`,

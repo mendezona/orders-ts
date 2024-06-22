@@ -8,8 +8,8 @@ import { getLatestTaxAmountCurrentFinancialYear } from "~/server/queries";
 import { DEVELOPMENT_MODE } from "../../actions.constants";
 import {
   ALPACA_ACCOUNTS,
-  ALPACA_TRADING_ACCOUNT_NAME_LIVE,
-  ALPACA_TRADING_ACCOUNT_NAME_PAPER,
+  ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+  ALPACA_PAPER_TRADING_ACCOUNT_NAME,
 } from "./alpaca.constants";
 import {
   type AlpacaAccountCredentials,
@@ -30,13 +30,13 @@ import {
  * @returns An AlpacaAccountCredentials object containing the endpoint, key, secret, and paper.
  */
 export const alpacaGetCredentials = (
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   developmentModeToggle: boolean = DEVELOPMENT_MODE,
 ): AlpacaAccountCredentials => {
   const accountInfo: AlpacaAccountCredentials | undefined =
     !developmentModeToggle
       ? ALPACA_ACCOUNTS[accountName]
-      : ALPACA_ACCOUNTS[ALPACA_TRADING_ACCOUNT_NAME_PAPER];
+      : ALPACA_ACCOUNTS[ALPACA_PAPER_TRADING_ACCOUNT_NAME];
 
   if (accountInfo) {
     console.log("Alpaca account credentials found");
@@ -60,7 +60,7 @@ export const alpacaGetCredentials = (
  * @returns An object containing account details, equity, and cash.
  */
 export const alpacaGetAccountBalance = async (
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetAccountBalance> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {
@@ -112,7 +112,7 @@ export const alpacaGetAccountBalance = async (
  */
 export const alpacaGetAvailableAssetBalance = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetAvailableAssetBalance> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {

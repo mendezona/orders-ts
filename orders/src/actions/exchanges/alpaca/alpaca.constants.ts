@@ -9,22 +9,22 @@ export const ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE: Decimal = new Decimal(
   0.03,
 );
 
-export const ALPACA_TRADING_ACCOUNT_NAME_LIVE = "alpacaTradingAccountNameLive";
-export const ALPACA_TRADING_LIVE_ENDPOINT = "https://api.alpaca.markets";
+export const ALPACA_LIVE_TRADING_ACCOUNT_NAME = "alpacaTradingAccountNameLive";
+export const ALPACA_LIVE_TRADING_ENDPOINT = "https://api.alpaca.markets";
 
-export const ALPACA_TRADING_ACCOUNT_NAME_PAPER =
+export const ALPACA_PAPER_TRADING_ACCOUNT_NAME =
   "alpacaTradingAccountNamePaper";
-export const ALPACA_TRADING_PAPER_ENDPOINT = "https://paper-api.alpaca.markets";
+export const ALPACA_PAPER_TRADING_ENDPOINT = "https://paper-api.alpaca.markets";
 
 export const ALPACA_ACCOUNTS: Record<string, AlpacaAccountCredentials> = {
-  [ALPACA_TRADING_ACCOUNT_NAME_LIVE]: {
-    endpoint: ALPACA_TRADING_LIVE_ENDPOINT,
+  [ALPACA_LIVE_TRADING_ACCOUNT_NAME]: {
+    endpoint: ALPACA_LIVE_TRADING_ENDPOINT,
     key: process.env.ALPACA_LIVE_KEY ?? "",
     secret: process.env.ALPACA_LIVE_SECRET ?? "",
     paper: false,
   },
-  [ALPACA_TRADING_ACCOUNT_NAME_PAPER]: {
-    endpoint: ALPACA_TRADING_PAPER_ENDPOINT,
+  [ALPACA_PAPER_TRADING_ACCOUNT_NAME]: {
+    endpoint: ALPACA_PAPER_TRADING_ENDPOINT,
     key: process.env.ALPACA_PAPER_KEY ?? "",
     secret: process.env.ALPACA_PAPER_SECRET ?? "",
     paper: true,

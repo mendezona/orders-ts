@@ -21,10 +21,10 @@ import {
 } from "../exchanges.utils";
 import {
   ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
+  ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
   ALPACA_TRADINGVIEW_INVERSE_PAIRS,
   ALPACA_TRADINGVIEW_SYMBOLS,
-  ALPACA_TRADING_ACCOUNT_NAME_LIVE,
 } from "./alpaca.constants";
 import {
   type AlpacaGetLatestQuote,
@@ -72,7 +72,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   calculateTax = true,
   buyAlert = true,
-  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   scheduleCronJob = true,
 }: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
   console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
@@ -202,7 +202,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   quantity,
   limitPrice,
   buySideOrder = true,
-  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   orderType = OrderType.LIMIT,
   timeInForce = TimeInForce.DAY,
   setSlippagePercentage = new Decimal(0),
@@ -305,7 +305,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   alpacaSymbol,
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
-  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   orderType = OrderType.LIMIT,
   timeInForce = TimeInForce.DAY,
   limitPrice,
@@ -435,7 +435,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   alpacaSymbol,
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
-  accountName = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   orderType = OrderType.MARKET,
   timeInForce = TimeInForce.DAY,
 }: AlpacaSubmitMarketOrderCustomPercentageParams): Promise<void> => {
@@ -528,7 +528,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
  */
 export const alpacaCloseAllHoldingsOfAsset = async (
   symbol: string,
-  accountName: string = ALPACA_TRADING_ACCOUNT_NAME_LIVE,
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
   if (!credentials) {

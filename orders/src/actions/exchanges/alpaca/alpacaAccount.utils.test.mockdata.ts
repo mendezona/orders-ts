@@ -1,19 +1,19 @@
 import {
-  ALPACA_TRADING_ACCOUNT_NAME_LIVE,
-  ALPACA_TRADING_ACCOUNT_NAME_PAPER,
-  ALPACA_TRADING_LIVE_ENDPOINT,
+  ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+  ALPACA_LIVE_TRADING_ENDPOINT,
+  ALPACA_PAPER_TRADING_ACCOUNT_NAME,
 } from "./alpaca.constants";
 import { type AlpacaAccountCredentials } from "./alpaca.types";
 import { type AlpacaApiGetPosition } from "./alpacaApi.types";
 
 export const MOCK_ALPACA_ACCOUNTS: Record<string, AlpacaAccountCredentials> = {
-  [ALPACA_TRADING_ACCOUNT_NAME_LIVE]: {
+  [ALPACA_LIVE_TRADING_ACCOUNT_NAME]: {
     endpoint: "mockLiveEndpoint",
     key: "mockLiveKey",
     secret: "mockLiveSecret",
     paper: false,
   },
-  [ALPACA_TRADING_ACCOUNT_NAME_PAPER]: {
+  [ALPACA_PAPER_TRADING_ACCOUNT_NAME]: {
     endpoint: "mockPaperEndpoint",
     key: "mockPaperKey",
     secret: "mockPaperSecret",
@@ -22,7 +22,7 @@ export const MOCK_ALPACA_ACCOUNTS: Record<string, AlpacaAccountCredentials> = {
 };
 
 export const mockCredentials: AlpacaAccountCredentials = {
-  endpoint: ALPACA_TRADING_LIVE_ENDPOINT,
+  endpoint: ALPACA_LIVE_TRADING_ENDPOINT,
   key: "mockKey",
   secret: "mockSecret",
   paper: true,
