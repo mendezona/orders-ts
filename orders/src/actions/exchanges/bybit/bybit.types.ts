@@ -12,6 +12,12 @@ export interface BybitGetSymbolIncrementsParams {
   productCategory?: CategoryV5;
 }
 
+export interface BybitCalculateProfitLossParams {
+  bybitPairSymbol: string;
+  accountName?: string;
+  productCategory?: CategoryV5;
+}
+
 export enum BybitDefaultProductCategory {
   SPOT = "spot",
 }
