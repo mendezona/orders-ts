@@ -19,7 +19,7 @@ import { bybitGetCredentials } from "./bybitAcccount.utils";
 /**
  * Retrieves information about required increments for an order.
  *
- * @param bybitPairSymbol - Pair symbol to search for information with hyphens removed (e.g., "BTC-USDT").
+ * @param bybitPairSymbol - Pair symbol to search for information with hyphens (e.g., "BTC-USDT").
  * @param accountName - The name of the account to use.
  * @param productCategory - The category of the instrument to search for (e.g., spot, linear inverse, or option).
  *
@@ -74,6 +74,15 @@ export const bybitGetSymbolIncrements = async ({
   }
 };
 
+/**
+ * Retrieves information about required increments for an order.
+ *
+ * @param bybitPairSymbol - Pair symbol to search for information with hyphens (e.g., "BTC-USDT").
+ * @param accountName - The name of the account to use.
+ * @param productCategory - The category of the instrument to search for (e.g., spot, linear inverse, or option).
+ *
+ * @returns A Decimal object representing the profit/loss for the specified order.
+ */
 export const bybitCalculateProfitLoss = async ({
   bybitPairSymbol,
   accountName = BYBIT_LIVE_TRADING_ACCOUNT_NAME,

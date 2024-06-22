@@ -18,6 +18,13 @@ export interface BybitCalculateProfitLossParams {
   productCategory?: CategoryV5;
 }
 
+export interface BybitGetMostRecentInverseFillToStablecoinParams {
+  bybitPairSymbol: string;
+  stablecoin?: string;
+  accountName?: string;
+  productCategory?: CategoryV5;
+}
+
 export enum BybitDefaultProductCategory {
   SPOT = "spot",
 }
