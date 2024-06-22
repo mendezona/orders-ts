@@ -68,3 +68,14 @@ export const logTimesInNewYorkAndLocalTimezone = (
 export const wait = (milliseconds: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 };
+
+/**
+ * Removes hyphens from a given pair symbol.
+ *
+ * @param pairSymbol - The symbol from which to remove hyphens (e.g., "BTC-USDT").
+ *
+ * @returns The symbol without hyphens.
+ */
+export const removeHyphensFromPairSymbol = (pairSymbol: string): string => {
+  return pairSymbol.replace(/-/g, "");
+};
