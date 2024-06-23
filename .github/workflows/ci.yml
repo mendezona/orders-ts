@@ -26,6 +26,12 @@ env:
   QSTASH_TOKEN: "fakeToken"
   QSTASH_CURRENT_SIGNING_KEY: "fakeKey"
   QSTASH_NEXT_SIGNING_KEY: "fakeKey"
+  BYBIT_LIVE_KEY: "fakeKey"
+  BYBIT_LIVE_SECRET: "fakeKey"
+  BYBIT_PAPER_KEY: "fakeKey"
+  BYBIT_PAPER_SECRET: "fakeKey"
+  BYBIT_TRADINGVIEW_SYMBOLS: "{}"
+  BYBIT_TRADINGVIEW_INVERSE_PAIRS: "{}"
 
 jobs:
   build:
