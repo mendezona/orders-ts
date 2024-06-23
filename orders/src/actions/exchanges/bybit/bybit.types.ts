@@ -34,6 +34,14 @@ export interface BybitSubmitMarketOrderCustomAmountParams {
   productCategory?: CategoryV5;
 }
 
+export interface BybitSubmitMarketOrderCustomPercentageParams {
+  bybitPairSymbol: string;
+  assetPercentageToDeploy: Decimal;
+  buySideOrder?: boolean;
+  accountName?: string;
+  productCategory?: CategoryV5;
+}
+
 export enum BybitProductCategory {
   SPOT = "spot",
 }
