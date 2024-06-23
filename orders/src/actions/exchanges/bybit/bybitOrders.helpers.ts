@@ -9,7 +9,7 @@ import Decimal from "decimal.js";
 import { removeHyphensFromPairSymbol } from "../exchanges.utils";
 import { BYBIT_LIVE_TRADING_ACCOUNT_NAME } from "./bybit.constants";
 import {
-  BybitDefaultProductCategory,
+  BybitProductCategory,
   type BybitAccountCredentials,
   type BybitCalculateProfitLossParams,
   type BybitGetSymbolIncrementsParams,
@@ -28,7 +28,7 @@ import { bybitGetCredentials } from "./bybitAcccount.utils";
 export const bybitGetSymbolIncrements = async ({
   bybitPairSymbol,
   accountName = BYBIT_LIVE_TRADING_ACCOUNT_NAME,
-  productCategory = BybitDefaultProductCategory.SPOT,
+  productCategory = BybitProductCategory.SPOT,
 }: BybitGetSymbolIncrementsParams): Promise<
   SpotInstrumentInfoV5 | LinearInverseInstrumentInfoV5 | OptionInstrumentInfoV5
 > => {
@@ -86,7 +86,7 @@ export const bybitGetSymbolIncrements = async ({
 export const bybitCalculateProfitLoss = async ({
   bybitPairSymbol,
   accountName = BYBIT_LIVE_TRADING_ACCOUNT_NAME,
-  productCategory = BybitDefaultProductCategory.SPOT,
+  productCategory = BybitProductCategory.SPOT,
 }: BybitCalculateProfitLossParams): Promise<Decimal> => {
   console.error(
     `bybitCalculateProfitLoss - Calculating profit/loss for ${bybitPairSymbol}`,

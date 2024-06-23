@@ -1,4 +1,5 @@
 import { type CategoryV5 } from "bybit-api";
+import type Decimal from "decimal.js";
 
 export interface BybitAccountCredentials {
   key: string;
@@ -25,7 +26,15 @@ export interface BybitGetMostRecentInverseFillToStablecoinParams {
   productCategory?: CategoryV5;
 }
 
-export enum BybitDefaultProductCategory {
+export interface BybitSubmitMarketOrderCustomAmountParams {
+  bybitPairSymbol: string;
+  dollarAmount: Decimal;
+  buySideOrder?: boolean;
+  accountName?: string;
+  productCategory?: CategoryV5;
+}
+
+export enum BybitProductCategory {
   SPOT = "spot",
 }
 

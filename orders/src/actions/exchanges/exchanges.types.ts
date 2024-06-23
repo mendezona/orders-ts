@@ -7,3 +7,8 @@ export interface TradingViewAlert {
   time: string;
   interval: string;
 }
+
+export interface GetBaseAndQuoteAssetsReturn {
+  baseAsset: string;
+  quoteAsset: string;
+}

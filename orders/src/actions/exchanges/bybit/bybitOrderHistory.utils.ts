@@ -6,7 +6,7 @@ import {
   BYBIT_PREFERRED_STABLECOIN,
 } from "./bybit.constants";
 import {
-  BybitDefaultProductCategory,
+  BybitProductCategory,
   type BybitAccountCredentials,
   type BybitGetMostRecentInverseFillToStablecoinParams,
 } from "./bybit.types";
@@ -26,7 +26,7 @@ export const bybitGetMostRecentInverseFillToStablecoin = async ({
   bybitPairSymbol,
   stablecoin = BYBIT_PREFERRED_STABLECOIN,
   accountName = BYBIT_LIVE_TRADING_ACCOUNT_NAME,
-  productCategory = BybitDefaultProductCategory.SPOT,
+  productCategory = BybitProductCategory.SPOT,
 }: BybitGetMostRecentInverseFillToStablecoinParams): Promise<boolean> => {
   console.log(
     "bybitGetMostRecentInverseFillToStablecoin - finding most recent inverse fill for:",

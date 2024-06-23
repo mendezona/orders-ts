@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { EXCHANGE_LOCAL_TIMEZONE } from "./exchanges.contants";
+import { type GetBaseAndQuoteAssetsReturn } from "./exchanges.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -78,4 +79,32 @@ export const wait = (milliseconds: number): Promise<void> => {
  */
 export const removeHyphensFromPairSymbol = (pairSymbol: string): string => {
   return pairSymbol.replace(/-/g, "");
+};
+
+/**
+ * Find base and quote assets in a trade pair symbol.
+ * For example, "AAPL-BTC" would be "AAPL" as the base currency and "BTC" as the quote currency.
+ *
+ * @param pairSymbol - Pair symbol formatted with a hyphen, e.g., "BASE-QUOTE".
+ *
+ * @returns A tuple of strings, Base currency and Quote currency.
+ */
+export const getBaseAndQuoteAssets = (
+  pairSymbol: string,
+): GetBaseAndQuoteAssetsReturn => {
+  if (!pairSymbol.includes("-")) {
+    throw new Error("Invalid symbol format. Expected format: 'BASE-QUOTE'");
+  }
+
+  const parts = pairSymbol.split("-");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    throw new Error(
+      `Invalid symbol format: '${pairSymbol}'. Expected format: 'BASE-QUOTE'`,
+    );
+  }
+
+  return {
+    baseAsset: parts[0].toUpperCase(),
+    quoteAsset: parts[1].toUpperCase(),
+  };
 };

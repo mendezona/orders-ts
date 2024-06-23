@@ -4,6 +4,7 @@ import { DEVELOPMENT_MODE } from "~/actions/actions.constants";
 import {
   BYBIT_ACCOUNTS,
   BYBIT_LIVE_TRADING_ACCOUNT_NAME,
+  BYBIT_PAPER_TRADING_ACCOUNT_NAME,
 } from "./bybit.constants";
 import { BybitAccountType, type BybitAccountCredentials } from "./bybit.types";
 
@@ -22,7 +23,7 @@ export const bybitGetCredentials = (
   const accountInfo: BybitAccountCredentials | undefined =
     !developmentModeToggle
       ? BYBIT_ACCOUNTS[accountName]
-      : BYBIT_ACCOUNTS[BYBIT_LIVE_TRADING_ACCOUNT_NAME];
+      : BYBIT_ACCOUNTS[BYBIT_PAPER_TRADING_ACCOUNT_NAME];
 
   if (accountInfo) {
     console.log("Bybit account credentials found");
