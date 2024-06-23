@@ -36,10 +36,18 @@ export interface BybitSubmitMarketOrderCustomAmountParams {
 
 export interface BybitSubmitMarketOrderCustomPercentageParams {
   bybitPairSymbol: string;
-  assetPercentageToDeploy: Decimal;
+  assetPercentageToDeploy?: Decimal;
   buySideOrder?: boolean;
   accountName?: string;
   productCategory?: CategoryV5;
+}
+
+export interface BybitSubmitPairTradeOrderParams {
+  tradingviewSymbol: string;
+  capitalPercentageToDeploy: Decimal;
+  calculateTax: boolean;
+  buyAlert: boolean;
+  accountName?: string;
 }
 
 export enum BybitProductCategory {

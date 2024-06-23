@@ -1,22 +1,128 @@
 import * as Sentry from "@sentry/nextjs";
 import { RestClientV5, type SpotInstrumentInfoV5 } from "bybit-api";
 import Decimal from "decimal.js";
+import { EXCHANGE_CAPITAL_GAINS_TAX_RATE } from "../exchanges.contants";
 import {
   getBaseAndQuoteAssets,
   removeHyphensFromPairSymbol,
 } from "../exchanges.utils";
-import { BYBIT_LIVE_TRADING_ACCOUNT_NAME } from "./bybit.constants";
+import {
+  BYBIT_LIVE_TRADING_ACCOUNT_NAME,
+  BYBIT_PREFERRED_STABLECOIN,
+  BYBIT_TAX_PAIR,
+  tradingviewBybitInverseSymbols,
+  tradingviewBybitSymbols,
+} from "./bybit.constants";
 import {
   BybitProductCategory,
   type BybitAccountCredentials,
   type BybitSubmitMarketOrderCustomAmountParams,
   type BybitSubmitMarketOrderCustomPercentageParams,
+  type BybitSubmitPairTradeOrderParams,
 } from "./bybit.types";
 import {
   bybitGetCoinBalance,
   bybitGetCredentials,
 } from "./bybitAcccount.utils";
-import { bybitGetSymbolIncrements } from "./bybitOrders.helpers";
+import { bybitGetMostRecentInverseFillToStablecoin } from "./bybitOrderHistory.utils";
+import {
+  bybitCalculateProfitLoss,
+  bybitGetSymbolIncrements,
+} from "./bybitOrders.helpers";
+
+// TODO: add cron job with tradingview price and schedule cron job
+/**
+ * Submits a pair trade order, intended to flip from long to short position or vice versa.
+ *
+ * @param tradingViewSymbol - The ticker symbol of the asset to trade.
+ * @param tradingViewPrice - The price of the asset to trade.
+ * @param capitalPercentageToDeploy - The percentage of equity to deploy.
+ * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
+ * @param calculateTax - Calculate and save taxable amount.
+ * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ * @param scheduleCronJob - Whether to schedule a cron job to check the price at the next defined interval.
+ */
+export const bybitSubmitPairTradeOrder = async ({
+  tradingviewSymbol,
+  capitalPercentageToDeploy = new Decimal(1),
+  buyAlert = true,
+  calculateTax = true,
+  accountName = BYBIT_LIVE_TRADING_ACCOUNT_NAME,
+}: BybitSubmitPairTradeOrderParams): Promise<void> => {
+  console.log("bybitSubmitPairTradeOrder - order beginning to execute");
+  const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Bybit account credentials not found");
+  }
+
+  const pairSymbol = buyAlert
+    ? tradingviewBybitSymbols[tradingviewSymbol]
+    : tradingviewBybitInverseSymbols[tradingviewSymbol];
+
+  const pairInverseSymbol = buyAlert
+    ? tradingviewBybitInverseSymbols[tradingviewSymbol]
+    : tradingviewBybitSymbols[tradingviewSymbol];
+
+  const inverseFillToStablecoin =
+    await bybitGetMostRecentInverseFillToStablecoin({
+      bybitPairSymbol: pairInverseSymbol ?? "",
+      accountName,
+    });
+  if (!inverseFillToStablecoin) {
+    const { baseAsset, quoteAsset } = getBaseAndQuoteAssets(
+      pairInverseSymbol ?? "",
+    );
+    if (
+      baseAsset !== BYBIT_PREFERRED_STABLECOIN &&
+      quoteAsset !== BYBIT_PREFERRED_STABLECOIN
+    ) {
+      throw new Error(
+        "Error - Base stablecoin currency for calculating profit/loss not found",
+      );
+    }
+    if (baseAsset === BYBIT_PREFERRED_STABLECOIN) {
+      console.log("No stablecoin conversion found - submit buy order");
+      await bybitSubmitMarketOrderCustomPercentage({
+        bybitPairSymbol: pairInverseSymbol ?? "",
+        accountName,
+      });
+    } else if (quoteAsset === BYBIT_PREFERRED_STABLECOIN) {
+      console.log("No stablecoin conversion found - submit sell order");
+      await bybitSubmitMarketOrderCustomPercentage({
+        bybitPairSymbol: pairInverseSymbol ?? "",
+        buySideOrder: false,
+        accountName,
+      });
+    }
+
+    if (calculateTax) {
+      const profitLossAmount = await bybitCalculateProfitLoss({
+        bybitPairSymbol: pairInverseSymbol ?? "",
+        accountName,
+      });
+      const taxAmount = new Decimal(profitLossAmount).times(
+        new Decimal(EXCHANGE_CAPITAL_GAINS_TAX_RATE),
+      );
+      console.log("Tax amount:", taxAmount.toString());
+
+      if (taxAmount.greaterThan(0)) {
+        await bybitSubmitMarketOrderCustomAmount({
+          bybitPairSymbol: BYBIT_TAX_PAIR,
+          dollarAmount: taxAmount,
+          buySideOrder: true,
+          accountName,
+        });
+      }
+    }
+  }
+
+  await bybitSubmitMarketOrderCustomPercentage({
+    bybitPairSymbol: pairSymbol ?? "",
+    assetPercentageToDeploy: capitalPercentageToDeploy,
+    buySideOrder: buyAlert,
+    accountName,
+  });
+};
 
 /**
  * Submit a market order for a custom dollarised amount.

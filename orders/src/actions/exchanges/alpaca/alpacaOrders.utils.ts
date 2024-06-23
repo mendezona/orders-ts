@@ -58,7 +58,6 @@ import {
  *
  * @param tradingViewSymbol - The ticker symbol of the asset to trade.
  * @param tradingViewPrice - The price of the asset to trade.
- * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
  * @param capitalPercentageToDeploy - The percentage of equity to deploy.
  * @param calculateTax - Calculate and save taxable amount.
  * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
