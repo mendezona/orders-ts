@@ -189,3 +189,52 @@ export const bybitCalculateProfitLoss = async ({
     throw error;
   }
 };
+
+/**
+ * Retrieves information about required increments for an order.
+ *
+ * @param bybitPairSymbol - Pair symbol to search for information with hyphens (e.g., "BTC-USDT").
+ * @param accountName - The name of the account to use.
+ *
+ * @returns A Decimal object for the last traded price for the specified pair symbol.
+ */
+export const bybitGetLatestTradedPrice = async (
+  bybitPairSymbol: string,
+  accountName: string = BYBIT_LIVE_TRADING_ACCOUNT_NAME,
+): Promise<Decimal> => {
+  console.error(
+    `bybitGetLatestTradedPrice - Getting latest traded price for ${bybitPairSymbol}`,
+  );
+  const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
+  if (!credentials) {
+    throw new Error("Bybit account credentials not found");
+  }
+
+  const parsedBybitPairSymbol = removeHyphensFromPairSymbol(bybitPairSymbol);
+  try {
+    const client = new RestClientV5({
+      key: credentials.key,
+      secret: credentials.secret,
+      testnet: credentials.testnet,
+    });
+
+    console.log("parsedBybitPairSymbol", parsedBybitPairSymbol);
+    const lastTradedPrice = await client.getTickers({
+      category: "spot",
+      symbol: "BTCUSDT",
+    });
+    if (lastTradedPrice.result.list[0]?.lastPrice) {
+      return new Decimal(lastTradedPrice.result.list[0]?.lastPrice);
+    }
+
+    throw new Error(
+      `bybitGetLatestTradedPrice - Error getting latest traded price for ${parsedBybitPairSymbol}`,
+    );
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error(
+      `bybitCalculateProfitLoss - Error occured while calculating profit/loss for ${parsedBybitPairSymbol}`,
+    );
+    throw error;
+  }
+};
