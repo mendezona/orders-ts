@@ -1,7 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
 import { RestClientV5, type SpotInstrumentInfoV5 } from "bybit-api";
 import Decimal from "decimal.js";
-import { EXCHANGE_CAPITAL_GAINS_TAX_RATE } from "../exchanges.contants";
+import { saveBuyTradeToDatabaseFlipTradeAlertTable } from "~/server/queries";
+import { type SaveBuyTradeToDatabaseFlipTradeAlertTableProps } from "~/server/queries.types";
+import {
+  EXCHANGES,
+  EXCHANGE_CAPITAL_GAINS_TAX_RATE,
+} from "../exchanges.contants";
 import {
   getBaseAndQuoteAssets,
   removeHyphensFromPairSymbol,
@@ -24,13 +29,13 @@ import {
   bybitGetCoinBalance,
   bybitGetCredentials,
 } from "./bybitAcccount.utils";
+import { bybitSchedulePriceCheckAtNextIntervalCronJob } from "./bybitCronJobs";
 import { bybitGetMostRecentInverseFillToStablecoin } from "./bybitOrderHistory.utils";
 import {
   bybitCalculateProfitLoss,
   bybitGetSymbolIncrements,
 } from "./bybitOrders.helpers";
 
-// TODO: add cron job with tradingview price and schedule cron job
 /**
  * Submits a pair trade order, intended to flip from long to short position or vice versa.
  *
@@ -43,11 +48,14 @@ import {
  * @param scheduleCronJob - Whether to schedule a cron job to check the price at the next defined interval.
  */
 export const bybitSubmitPairTradeOrder = async ({
-  tradingviewSymbol,
+  tradingViewSymbol,
+  tradingViewPrice,
+  tradingViewInterval,
   capitalPercentageToDeploy = new Decimal(1),
   buyAlert = true,
   calculateTax = true,
   accountName = BYBIT_LIVE_TRADING_ACCOUNT_NAME,
+  scheduleCronJob = true,
 }: BybitSubmitPairTradeOrderParams): Promise<void> => {
   console.log("bybitSubmitPairTradeOrder - order beginning to execute");
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
@@ -56,12 +64,12 @@ export const bybitSubmitPairTradeOrder = async ({
   }
 
   const pairSymbol = buyAlert
-    ? tradingviewBybitSymbols[tradingviewSymbol]
-    : tradingviewBybitInverseSymbols[tradingviewSymbol];
+    ? tradingviewBybitSymbols[tradingViewSymbol]
+    : tradingviewBybitInverseSymbols[tradingViewSymbol];
 
   const pairInverseSymbol = buyAlert
-    ? tradingviewBybitInverseSymbols[tradingviewSymbol]
-    : tradingviewBybitSymbols[tradingviewSymbol];
+    ? tradingviewBybitInverseSymbols[tradingViewSymbol]
+    : tradingviewBybitSymbols[tradingViewSymbol];
 
   const inverseFillToStablecoin =
     await bybitGetMostRecentInverseFillToStablecoin({
@@ -122,6 +130,24 @@ export const bybitSubmitPairTradeOrder = async ({
     buySideOrder: buyAlert,
     accountName,
   });
+
+  await saveBuyTradeToDatabaseFlipTradeAlertTable({
+    exchange: EXCHANGES.BYBIT,
+    symbol: tradingViewSymbol,
+    price: tradingViewPrice,
+  } as SaveBuyTradeToDatabaseFlipTradeAlertTableProps);
+
+  if (scheduleCronJob) {
+    if (!tradingViewInterval) {
+      throw new Error("Error - Interval required to set cron job");
+    }
+    await bybitSchedulePriceCheckAtNextIntervalCronJob({
+      tradingViewSymbol,
+      tradingViewPrice,
+      tradingViewInterval,
+      buyAlert,
+    });
+  }
 };
 
 /**

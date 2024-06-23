@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { EXCHANGE_LOCAL_TIMEZONE } from "./exchanges.contants";
@@ -107,4 +107,55 @@ export const getBaseAndQuoteAssets = (
     baseAsset: parts[0].toUpperCase(),
     quoteAsset: parts[1].toUpperCase(),
   };
+};
+
+/**
+ * Finds the next interval time for a cron job for a 24/7 market.
+ *
+ * @param now - The current time of execution.
+ * @param intervalMinutes - The interval in minutes defined by the TradingView alert.
+ *
+ * @returns A Dayjs object representing the next time to schedule the cron job.
+ */
+export const getNextIntervalTimeFor24Hour7DayMarket = (
+  now: Dayjs,
+  intervalMinutes: number,
+): Dayjs => {
+  // Total minutes in a day (1440 minutes)
+  const totalMinutesInDay = 24 * 60;
+
+  // Calculate the next interval time within the day
+  for (
+    let minutes = 0;
+    minutes < totalMinutesInDay;
+    minutes += intervalMinutes
+  ) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const intervalTime = now
+      .set("hour", hours)
+      .set("minute", mins)
+      .set("second", 0)
+      .set("millisecond", 0);
+
+    // If the interval time is after the current time, it is a valid next interval
+    if (intervalTime.isAfter(now)) {
+      console.log(
+        `getNextIntervalTimeFor24Hour7DayMarket - Next interval time: ${intervalTime.toString()}`,
+      );
+      return intervalTime;
+    }
+  }
+
+  // If all times have passed today, schedule for the first interval tomorrow
+  const nextTime = now
+    .set("hour", 0)
+    .set("minute", 0)
+    .set("second", 0)
+    .set("millisecond", 0)
+    .add(1, "day");
+  console.log(
+    "getNextIntervalTimeFor24Hour7DayMarket -All times have passed today, scheduling for the first interval tomorrow",
+  );
+  return nextTime;
 };

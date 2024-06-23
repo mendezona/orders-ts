@@ -43,11 +43,26 @@ export interface BybitSubmitMarketOrderCustomPercentageParams {
 }
 
 export interface BybitSubmitPairTradeOrderParams {
-  tradingviewSymbol: string;
+  tradingViewSymbol: string;
+  tradingViewPrice: string;
+  tradingViewInterval?: string;
   capitalPercentageToDeploy: Decimal;
   calculateTax: boolean;
   buyAlert: boolean;
   accountName?: string;
+  scheduleCronJob?: boolean;
+}
+
+export interface BybitSchedulePriceCheckAtNextInternalCronJobParams {
+  tradingViewSymbol: string;
+  tradingViewPrice: string;
+  tradingViewInterval: string;
+  buyAlert: boolean;
+}
+
+export interface BybitCheckLatestPriceAndReverseTradeCronJobParams {
+  tradingViewSymbol: string;
+  buyAlert: boolean;
 }
 
 export enum BybitProductCategory {
