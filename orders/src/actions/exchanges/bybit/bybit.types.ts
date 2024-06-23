@@ -46,9 +46,9 @@ export interface BybitSubmitPairTradeOrderParams {
   tradingViewSymbol: string;
   tradingViewPrice: string;
   tradingViewInterval?: string;
-  capitalPercentageToDeploy: Decimal;
-  calculateTax: boolean;
-  buyAlert: boolean;
+  capitalPercentageToDeploy?: Decimal;
+  calculateTax?: boolean;
+  buyAlert?: boolean;
   accountName?: string;
   scheduleCronJob?: boolean;
 }
