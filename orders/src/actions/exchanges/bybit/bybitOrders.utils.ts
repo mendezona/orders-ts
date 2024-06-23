@@ -39,6 +39,8 @@ import {
 /**
  * Submits a pair trade order, intended to flip from long to short position or vice versa.
  *
+ * For tax, this will automatically convert the tax to the preffered stablecoin, instead of saving it in the database.
+ *
  * @param tradingViewSymbol - The ticker symbol of the asset to trade.
  * @param tradingViewPrice - The price of the asset to trade.
  * @param capitalPercentageToDeploy - The percentage of equity to deploy.

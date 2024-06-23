@@ -62,12 +62,14 @@ export const saveBuyTradeToDatabaseFlipTradeAlertTable = async ({
 };
 
 export const saveSellTradeToDatabaseSellTable = async ({
+  exchange,
   symbol,
   profitOrLossAmount,
   taxableAmount,
 }: SaveSellTradeToDatabaseSellTableProps) => {
   try {
     await db.insert(sellTrades).values({
+      exchange,
       symbol,
       profitOrLossAmount,
       taxableAmount,

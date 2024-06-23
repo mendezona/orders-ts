@@ -141,6 +141,7 @@ export const alpacaSubmitPairTradeOrder = async ({
 
       if (taxAmount.gt(0)) {
         await saveSellTradeToDatabaseSellTable({
+          exchange: EXCHANGES.ALPACA,
           symbol: alpacaInverseSymbol,
           profitOrLossAmount: profitLossAmount.toString(),
           taxableAmount: taxAmount.toString(),

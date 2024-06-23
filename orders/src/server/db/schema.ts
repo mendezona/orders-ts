@@ -31,6 +31,7 @@ export const flipAlerts = createTable("flipAlerts", {
 
 export const sellTrades = createTable("sellTrades", {
   id: serial("id").primaryKey(),
+  exchange: text("exchange"),
   symbol: text("symbol").notNull(),
   profitOrLossAmount: numeric("profit_amount", {
     precision: 20,
