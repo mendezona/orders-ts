@@ -34,9 +34,11 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
   buyAlert,
 }: AlpacaSchedulePriceCheckAtNextInternalCronJobParams): Promise<void> => {
   if (!process.env.QSTASH_URL || !process.env.QSTASH_TOKEN) {
-    throw new Error(
-      "alpacaSchedulePriceCheckAtNextIntervalCronJob - environment variables are not defined",
-    );
+    const errorMessage =
+      "alpacaSchedulePriceCheckAtNextIntervalCronJob - environment variables are not defined";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   console.log(

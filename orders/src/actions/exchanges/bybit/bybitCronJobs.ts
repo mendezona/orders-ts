@@ -33,9 +33,11 @@ export const bybitSchedulePriceCheckAtNextIntervalCronJob = async ({
   buyAlert,
 }: BybitSchedulePriceCheckAtNextInternalCronJobParams): Promise<void> => {
   if (!process.env.QSTASH_URL || !process.env.QSTASH_TOKEN) {
-    throw new Error(
-      "bybitSchedulePriceCheckAtNextIntervalCronJob - environment variables are not defined",
-    );
+    const errorMessage =
+      "bybitSchedulePriceCheckAtNextIntervalCronJob - environment variables are not defined";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   console.log(

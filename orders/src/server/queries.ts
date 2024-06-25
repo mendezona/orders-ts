@@ -95,7 +95,10 @@ export const getLatestFlipAlertForSymbol = async (
       return latestFlipAlert[0] as FlipAlertItem;
     }
 
-    throw new Error(`No trades found for symbol: ${symbol}`);
+    const errorMessage = `No trades found for symbol: ${symbol}`;
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   } catch (error) {
     Sentry.captureException(error);
     throw error;

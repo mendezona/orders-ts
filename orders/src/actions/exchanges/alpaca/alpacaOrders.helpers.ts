@@ -35,9 +35,6 @@ export const alpacaIsAssetFractionable = async (
     `alpacaIsAssetFractionable - checking if ${symbol} is fractionable`,
   );
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -76,9 +73,6 @@ export const alpacaCalculateProfitLoss = async (
     symbol,
   );
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -151,7 +145,10 @@ export const alpacaCalculateProfitLoss = async (
   }
 
   if (accumulatedBuyQuantity.lessThan(sellQuantityNeeded)) {
-    throw new Error("Not enough buy orders to match the sell quantity.");
+    const errorMessage = "Not enough buy orders to match the sell quantity.";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   console.log("Buy price:", totalBuyCost.toString());
@@ -179,9 +176,6 @@ export const alpacaGetLatestQuote = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetLatestQuote> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -247,12 +241,10 @@ export const alpacaGetLatestQuote = async (
     }
   }
 
-  console.error(
-    `alpacaGetLatestQuote - An error occurred while fetching quote data for ${symbol}`,
-  );
-  throw new Error(
-    `alpacaGetLatestQuote - Error,quote data for ${symbol} not found`,
-  );
+  const errorMessage = `alpacaGetLatestQuote - An error occurred while fetching quote data for ${symbol}`;
+  console.error(errorMessage);
+  Sentry.captureMessage(errorMessage);
+  throw new Error(errorMessage);
 };
 
 /**
@@ -271,9 +263,6 @@ export const alpacaAreHoldingsClosed = async (
     `alpacaAreHoldingsClosed - Checking if holdings for ${symbol} are closed`,
   );
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,

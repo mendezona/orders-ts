@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import dayjs, { type Dayjs } from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
@@ -93,14 +94,16 @@ export const getBaseAndQuoteAssets = (
   pairSymbol: string,
 ): GetBaseAndQuoteAssetsReturn => {
   if (!pairSymbol.includes("-")) {
-    throw new Error("Invalid symbol format. Expected format: 'BASE-QUOTE'");
+    const errorMessage = "Invalid symbol format. Expected format: 'BASE-QUOTE'";
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   const parts = pairSymbol.split("-");
   if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    throw new Error(
-      `Invalid symbol format: '${pairSymbol}'. Expected format: 'BASE-QUOTE'`,
-    );
+    const errorMessage = `Invalid symbol format: '${pairSymbol}'. Expected format: 'BASE-QUOTE'`;
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   return {

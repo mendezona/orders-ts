@@ -28,9 +28,6 @@ export const alpacaCheckLastFilledOrderType = async (
     `alpacaCheckLastFilledOrderType - Checking last filled order for ${symbol}`,
   );
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -56,7 +53,10 @@ export const alpacaCheckLastFilledOrderType = async (
 
     // Check if there are any filled orders
     if (filledOrders.length === 0 || filledOrders[0] === undefined) {
-      throw new Error("Error fetching last closed orders");
+      const errorMessage = "Error fetching last closed orders";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
 
     // Get the most recent filled order

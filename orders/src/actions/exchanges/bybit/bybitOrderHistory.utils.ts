@@ -33,9 +33,6 @@ export const bybitGetMostRecentInverseFillToStablecoin = async ({
     bybitPairSymbol,
   );
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   const parsedBybitPairSymbol = removeHyphensFromPairSymbol(bybitPairSymbol);
   try {
@@ -71,9 +68,10 @@ export const bybitGetMostRecentInverseFillToStablecoin = async ({
       }
     }
 
-    throw new Error(
-      `bybitGetMostRecentInverseFillToStablecoin - Error occured while getting inverse fill to stablecoin for ${parsedBybitPairSymbol}`,
-    );
+    const errorMessage = `bybitGetMostRecentInverseFillToStablecoin - Error occured while getting inverse fill to stablecoin for ${parsedBybitPairSymbol}`;
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   } catch (error) {
     Sentry.captureException(error);
     console.error(

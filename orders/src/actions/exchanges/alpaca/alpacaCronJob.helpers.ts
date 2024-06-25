@@ -1,4 +1,5 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import * as Sentry from "@sentry/nextjs";
 import dayjs, { type Dayjs } from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
@@ -21,9 +22,6 @@ export const alpacaGetNextIntervalTime = async (
   intervalMinutes: number,
 ): Promise<Dayjs> => {
   const credentials = alpacaGetCredentials();
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca = new Alpaca({
     keyId: credentials.key,
@@ -38,7 +36,10 @@ export const alpacaGetNextIntervalTime = async (
   })) as AlpacaCalendar[];
 
   if (calendar[0] === undefined) {
-    throw new Error("No trading calendar found for today.");
+    const errorMessage = "No trading calendar found for today.";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   const currentNYTime = dayjs().tz("America/New_York");
@@ -110,9 +111,6 @@ export const alpacaGetNextAvailableTradingDay = async (
   date: Dayjs,
 ): Promise<Dayjs> => {
   const credentials = alpacaGetCredentials();
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -134,7 +132,9 @@ export const alpacaGetNextAvailableTradingDay = async (
     }
   }
 
-  throw new Error(
-    "Error - alpacaGetNextAvailableTradingDay - No trading days available in the next 7 days.",
-  );
+  const errorMessage =
+    "Error - alpacaGetNextAvailableTradingDay - No trading days available in the next 7 days.";
+  console.log(errorMessage);
+  Sentry.captureMessage(errorMessage);
+  throw new Error(errorMessage);
 };

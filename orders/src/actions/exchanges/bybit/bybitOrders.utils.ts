@@ -60,10 +60,6 @@ export const bybitSubmitPairTradeOrder = async ({
   scheduleCronJob = true,
 }: BybitSubmitPairTradeOrderParams): Promise<void> => {
   console.log("bybitSubmitPairTradeOrder - order beginning to execute");
-  const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   const pairSymbol = buyAlert
     ? tradingviewBybitSymbols[tradingViewSymbol]
@@ -86,9 +82,11 @@ export const bybitSubmitPairTradeOrder = async ({
       baseAsset !== BYBIT_PREFERRED_STABLECOIN &&
       quoteAsset !== BYBIT_PREFERRED_STABLECOIN
     ) {
-      throw new Error(
-        "Error - Base stablecoin currency for calculating profit/loss not found",
-      );
+      const errorMessage =
+        "Error - Base stablecoin currency for calculating profit/loss not found";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
     if (baseAsset === BYBIT_PREFERRED_STABLECOIN) {
       console.log("No stablecoin conversion found - submit buy order");
@@ -141,7 +139,10 @@ export const bybitSubmitPairTradeOrder = async ({
 
   if (scheduleCronJob) {
     if (!tradingViewInterval) {
-      throw new Error("Error - Interval required to set cron job");
+      const errorMessage = "Error - Interval required to set cron job";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
     await bybitSchedulePriceCheckAtNextIntervalCronJob({
       tradingViewSymbol,
@@ -172,9 +173,6 @@ export const bybitSubmitMarketOrderCustomPercentage = async ({
     "bybitSubmitMarketOrderCustomPercentage - order beginning to execute",
   );
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   try {
     const { baseAsset, quoteAsset } = getBaseAndQuoteAssets(bybitPairSymbol);
@@ -184,12 +182,11 @@ export const bybitSubmitMarketOrderCustomPercentage = async ({
     const parsedBalance = new Decimal(balance);
 
     if (parsedBalance.lessThanOrEqualTo(assetPercentageToDeploy)) {
-      console.log(
-        "bybitSubmitMarketOrderCustomPercentage - Error, insufficient funds to execute order",
-      );
-      throw new Error(
-        "bybitSubmitMarketOrderCustomPercentage - Error, insufficient funds to execute order",
-      );
+      const errorMessage =
+        "bybitSubmitMarketOrderCustomPercentage - Error, insufficient funds to execute order";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
 
     const incrementsObject = (await bybitGetSymbolIncrements({
@@ -239,9 +236,11 @@ export const bybitSubmitMarketOrderCustomPercentage = async ({
         "\n",
       );
     } else {
-      throw new Error(
-        "bybitSubmitMarketOrderCustomPercentage - Error, no funds to deploy",
-      );
+      const errorMessage =
+        "bybitSubmitMarketOrderCustomPercentage - Error, no funds to deploy";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
   } catch (error) {
     Sentry.captureException(error);
@@ -272,9 +271,6 @@ export const bybitSubmitMarketOrderCustomAmount = async ({
     "bybitSubmitMarketOrderCustomAmount - order beginning to execute",
   );
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   try {
     const { baseAsset, quoteAsset } = getBaseAndQuoteAssets(bybitPairSymbol);
@@ -284,12 +280,11 @@ export const bybitSubmitMarketOrderCustomAmount = async ({
     const parsedBalance = new Decimal(balance);
 
     if (parsedBalance.lessThanOrEqualTo(dollarAmount)) {
-      console.log(
-        "bybitSubmitMarketOrderCustomAmount - Error, insufficient funds to execute order",
-      );
-      throw new Error(
-        "bybitSubmitMarketOrderCustomAmount - Error, insufficient funds to execute order",
-      );
+      const errorMessage =
+        "bybitSubmitMarketOrderCustomAmount - Error, insufficient funds to execute order";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
 
     const incrementsObject = (await bybitGetSymbolIncrements({

@@ -47,8 +47,10 @@ export const alpacaGetCredentials = (
       paper: accountInfo.paper,
     };
   } else {
-    console.log("Error - Alpaca account credentials not found");
-    throw new Error("Alpaca account credentials not found");
+    const errorMessage = "Alpaca account credentials not found";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 };
 
@@ -63,9 +65,6 @@ export const alpacaGetAccountBalance = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetAccountBalance> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -115,9 +114,6 @@ export const alpacaGetAvailableAssetBalance = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetAvailableAssetBalance> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -135,7 +131,10 @@ export const alpacaGetAvailableAssetBalance = async (
     console.log(`Market value for ${symbol}:`, positionDetails.market_value);
 
     if (!positionDetails.qty || !positionDetails.market_value) {
-      throw new Error("Position details not found");
+      const errorMessage = "Position details not found";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
 
     return {

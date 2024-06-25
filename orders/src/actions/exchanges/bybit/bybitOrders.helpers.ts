@@ -36,9 +36,6 @@ export const bybitGetSymbolIncrements = async ({
     `bybitGetSymbolIncrements - Getting symbol increments for ${bybitPairSymbol}`,
   );
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   const parsedBybitPairSymbol = removeHyphensFromPairSymbol(bybitPairSymbol);
   try {
@@ -62,9 +59,10 @@ export const bybitGetSymbolIncrements = async ({
       }
     }
 
-    throw new Error(
-      `bybitGetSymbolIncrements - Error getting symbol increments for ${parsedBybitPairSymbol}`,
-    );
+    const errorMessage = `bybitGetSymbolIncrements - Error getting symbol increments for ${parsedBybitPairSymbol}`;
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   } catch (error) {
     Sentry.captureException(error);
     console.error(
@@ -92,9 +90,6 @@ export const bybitCalculateProfitLoss = async ({
     `bybitCalculateProfitLoss - Calculating profit/loss for ${bybitPairSymbol}`,
   );
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   const parsedBybitPairSymbol = removeHyphensFromPairSymbol(bybitPairSymbol);
   try {
@@ -206,9 +201,6 @@ export const bybitGetLatestTradedPrice = async (
     `bybitGetLatestTradedPrice - Getting latest traded price for ${bybitPairSymbol}`,
   );
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   const parsedBybitPairSymbol = removeHyphensFromPairSymbol(bybitPairSymbol);
   try {
@@ -228,9 +220,10 @@ export const bybitGetLatestTradedPrice = async (
       return new Decimal(lastTradedPrice.result.list[0]?.lastPrice);
     }
 
-    throw new Error(
-      `bybitGetLatestTradedPrice - Error getting latest traded price for ${parsedBybitPairSymbol}`,
-    );
+    const errorMessage = `bybitGetLatestTradedPrice - Error getting latest traded price for ${parsedBybitPairSymbol}`;
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   } catch (error) {
     Sentry.captureException(error);
     console.error(

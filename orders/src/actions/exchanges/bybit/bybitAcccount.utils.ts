@@ -33,8 +33,10 @@ export const bybitGetCredentials = (
       testnet: accountInfo.testnet,
     };
   } else {
-    console.log("Error - Bybit account credentials not found");
-    throw new Error("Bybit account credentials not found");
+    const errorMessage = "Bybit account credentials not found";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 };
 
@@ -52,9 +54,6 @@ export const bybitGetCoinBalance = async (
 ): Promise<string> => {
   console.log("bybitGetCoinBalance - finding balance for:", coin);
   const credentials: BybitAccountCredentials = bybitGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Bybit account credentials not found");
-  }
 
   try {
     const client = new RestClientV5({
@@ -83,7 +82,11 @@ export const bybitGetCoinBalance = async (
         }
       }
     }
-    throw new Error("Coin balance not found");
+
+    const errorMessage = "Coin balance not found";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   } catch (error) {
     Sentry.captureException(error);
     console.error(`Error getting balance for ${coin}:`);

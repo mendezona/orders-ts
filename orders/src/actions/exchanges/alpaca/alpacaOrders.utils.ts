@@ -88,9 +88,10 @@ export const alpacaSubmitPairTradeOrder = async ({
     : ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol];
 
   if (!alpacaSymbol || !alpacaInverseSymbol) {
-    throw new Error(
-      `Error - alpacaSubmitPairTradeOrder: ${tradingViewSymbol} not found`,
-    );
+    const errorMessage = `Error - alpacaSubmitPairTradeOrder: ${tradingViewSymbol} not found`;
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   console.log("alpacaSymbol", alpacaSymbol);
@@ -174,7 +175,10 @@ export const alpacaSubmitPairTradeOrder = async ({
 
   if (scheduleCronJob) {
     if (!tradingViewInterval) {
-      throw new Error("Error - Interval required to set cron job");
+      const errorMessage = "Error - Interval required to set cron job";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
     }
     await alpacaSchedulePriceCheckAtNextIntervalCronJob({
       tradingViewSymbol,
@@ -208,9 +212,6 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   setSlippagePercentage = new Decimal(0),
 }: AlpacaSubmitLimitOrderCustomQuantityParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomQuantity");
   logTimesInNewYorkAndLocalTimezone();
@@ -312,9 +313,6 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   setSlippagePercentage = new Decimal(0),
 }: AlpacaSubmitLimitOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomPercentage");
   logTimesInNewYorkAndLocalTimezone();
@@ -327,8 +325,10 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     .toDecimalPlaces(2, Decimal.ROUND_DOWN);
 
   if (fundsToDeploy.lte(0)) {
-    console.log("Error - Insufficient funds to deploy");
-    throw new Error("Error - Insufficient funds to deploy");
+    const errorMessage = "Error - Insufficient funds to deploy";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   if (fundsToDeploy.gt(accountCash)) {
@@ -440,9 +440,6 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   timeInForce = TimeInForce.DAY,
 }: AlpacaSubmitMarketOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   console.log("Alpaca Order Begin - alpacaSubmitMarketOrderCustomPercentage");
   logTimesInNewYorkAndLocalTimezone();
@@ -456,8 +453,10 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     .toDecimalPlaces(2, Decimal.ROUND_DOWN);
 
   if (fundsToDeploy.lte(0)) {
-    console.log("Error - Insufficient funds to deploy");
-    throw new Error("Error - Insufficient funds to deploy");
+    const errorMessage = "Error - Insufficient funds to deploy";
+    console.log(errorMessage);
+    Sentry.captureMessage(errorMessage);
+    throw new Error(errorMessage);
   }
 
   if (fundsToDeploy.gt(accountCash)) {
@@ -531,9 +530,6 @@ export const alpacaCloseAllHoldingsOfAsset = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
-  if (!credentials) {
-    throw new Error("Alpaca account credentials not found");
-  }
 
   console.log("Alpaca Order Begin - alpacaCloseAllHoldingsOfAsset");
   logTimesInNewYorkAndLocalTimezone();
