@@ -90,7 +90,7 @@ export const alpacaCalculateProfitLoss = async (
   const orders: Order[] = await alpaca.getOrders({
     symbols: symbol,
     status: QueryOrderStatus.CLOSED,
-    limit: 10,
+    limit: 20,
     until: null,
     after: null,
     direction: null,
@@ -158,8 +158,11 @@ export const alpacaCalculateProfitLoss = async (
   console.log("Sell price:", totalSellValue.toString());
 
   // Calculate profit or loss
-  const profitLoss: Decimal = totalBuyCost.minus(totalSellValue);
-  console.log("Profit Loss:", profitLoss.toString());
+  const profitLoss: Decimal = totalSellValue.minus(totalBuyCost);
+  console.log(
+    "alpacaCalculateProfitLoss - Total Profit Loss:",
+    profitLoss.toString(),
+  );
   return profitLoss;
 };
 

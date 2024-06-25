@@ -137,7 +137,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       const taxAmount: Decimal = profitLossAmount
         .times(EXCHANGE_CAPITAL_GAINS_TAX_RATE)
         .toDecimalPlaces(2, Decimal.ROUND_UP);
-      console.log("tax_amount", profitLossAmount.toString(), "\n");
+      console.log("tax_amount", taxAmount.toString(), "\n");
 
       if (taxAmount.gt(0)) {
         await saveSellTradeToDatabaseSellTable({

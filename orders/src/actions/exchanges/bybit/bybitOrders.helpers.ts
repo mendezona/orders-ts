@@ -218,6 +218,7 @@ export const bybitGetLatestTradedPrice = async (
       testnet: credentials.testnet,
     });
 
+    // TODO: Check that this is a reliable endpoint from Bybit
     console.log("parsedBybitPairSymbol", parsedBybitPairSymbol);
     const lastTradedPrice = await client.getTickers({
       category: "spot",
