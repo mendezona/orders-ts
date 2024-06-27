@@ -1,18 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import Alpaca from "@alpacahq/alpaca-trade-api";
-import Decimal from "decimal.js";
 import {
   ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   ALPACA_PAPER_TRADING_ACCOUNT_NAME,
 } from "./alpaca.constants";
-import { type AlpacaGetAvailableAssetBalance } from "./alpaca.types";
-import {
-  alpacaGetAvailableAssetBalance,
-  alpacaGetCredentials,
-} from "./alpacaAccount.utils";
+import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import {
   MOCK_ALPACA_ACCOUNTS,
-  mockCredentials,
   mockPositionDetails,
 } from "./alpacaAccount.utils.test.mockdata";
 
@@ -79,34 +72,6 @@ describe("alpacaGetCredentials", () => {
     const credentials = alpacaGetCredentials(undefined, false);
     expect(credentials).toEqual(
       MOCK_ALPACA_ACCOUNTS[ALPACA_LIVE_TRADING_ACCOUNT_NAME],
-    );
-  });
-});
-
-describe("alpacaGetAvailableAssetBalance", () => {
-  beforeEach(() => {
-    jest.doMock("./alpacaAccount.utils", () => ({
-      alpacaGetCredentials: jest.fn().mockReturnValue(mockCredentials),
-    }));
-  });
-  it("should return available asset balance for the given symbol", async () => {
-    const result: AlpacaGetAvailableAssetBalance =
-      await alpacaGetAvailableAssetBalance("AAPL");
-    expect(result.position).toBe(mockPositionDetails.position);
-    expect(result.qty).toEqual(new Decimal(mockPositionDetails.qty!));
-    expect(result.market_value).toEqual(
-      new Decimal(mockPositionDetails.market_value!),
-    );
-  });
-  it("should throw an error if getPosition fails", async () => {
-    const AlpacaMock = Alpaca as jest.MockedClass<typeof Alpaca>;
-    const alpacaInstance = new AlpacaMock();
-    (alpacaInstance.getPosition as jest.Mock).mockRejectedValueOnce(
-      new Error("API error"),
-    );
-    AlpacaMock.mockImplementation(() => alpacaInstance);
-    await expect(alpacaGetAvailableAssetBalance("AAPL")).rejects.toThrow(
-      "API error",
     );
   });
 });

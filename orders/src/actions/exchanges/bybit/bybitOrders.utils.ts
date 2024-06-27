@@ -69,6 +69,7 @@ export const bybitSubmitPairTradeOrder = async ({
     ? tradingviewBybitInverseSymbols[tradingViewSymbol]
     : tradingviewBybitSymbols[tradingViewSymbol];
 
+  // TODO: Replace this function by checking if the inverse psition is open
   const inverseFillToStablecoin =
     await bybitGetMostRecentInverseFillToStablecoin({
       bybitPairSymbol: pairInverseSymbol ?? "",

@@ -14,7 +14,7 @@ import {
 import {
   type AlpacaAccountCredentials,
   type AlpacaGetAccountBalance,
-  type AlpacaGetAvailableAssetBalance,
+  type AlpacaGetPositionForAsset,
 } from "./alpaca.types";
 import {
   type AlpacaApiGetPosition,
@@ -109,10 +109,10 @@ export const alpacaGetAccountBalance = async (
  *
  * @returns A Decimal with the number of available assets.
  */
-export const alpacaGetAvailableAssetBalance = async (
+export const alpacaGetPositionForAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<AlpacaGetAvailableAssetBalance> => {
+): Promise<AlpacaGetPositionForAsset> => {
   const credentials = alpacaGetCredentials(accountName);
 
   const alpaca: Alpaca = new Alpaca({
@@ -122,29 +122,36 @@ export const alpacaGetAvailableAssetBalance = async (
   });
 
   try {
-    const positionDetails: AlpacaApiGetPosition = (await alpaca.getPosition(
+    const position: AlpacaApiGetPosition = (await alpaca.getPosition(
       symbol,
     )) satisfies AlpacaApiGetPosition;
 
-    console.log(`Position for ${symbol}:`, positionDetails);
-    console.log(`Quantity of ${symbol}:`, positionDetails.qty);
-    console.log(`Market value for ${symbol}:`, positionDetails.market_value);
-
-    if (!positionDetails.qty || !positionDetails.market_value) {
-      const errorMessage = "Position details not found";
-      console.log(errorMessage);
-      Sentry.captureMessage(errorMessage);
-      throw new Error(errorMessage);
+    if (!position.qty || !position.market_value) {
+      console.log("alpacaGetPositionForAsset - Position details not found");
+      return {
+        openPositionFound: false,
+      };
     }
 
+    console.log(`Position for ${symbol}:`, position);
+    console.log(`Quantity of ${symbol}:`, position.qty);
+    console.log(`Market value for ${symbol}:`, position.market_value);
+    console.log("alpacaGetPositionForAsset - Position details found");
+
     return {
-      position: positionDetails.position,
-      qty: new Decimal(positionDetails.qty),
-      market_value: new Decimal(positionDetails.market_value),
+      openPositionFound: true,
+      position,
+      qty: new Decimal(position.qty),
+      market_value: new Decimal(position.market_value),
     };
   } catch (error) {
-    Sentry.captureException(error);
-    console.error(`Error getting position for ${symbol}:`, error);
-    throw error;
+    console.error(
+      "alpacaGetPositionForAsset - Error fetching position details:",
+      error,
+    );
+    console.log("alpacaGetPositionForAsset - Position details not found");
+    return {
+      openPositionFound: false,
+    };
   }
 };

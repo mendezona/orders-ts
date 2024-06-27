@@ -1,5 +1,6 @@
 import type Decimal from "decimal.js";
 import {
+  type AlpacaApiGetPosition,
   type OrderType,
   type TimeInForce,
   type TradeAccount,
@@ -18,10 +19,11 @@ export interface AlpacaGetAccountBalance {
   accountCash: Decimal;
 }
 
-export interface AlpacaGetAvailableAssetBalance {
-  position: string;
-  qty: Decimal;
-  market_value: Decimal;
+export interface AlpacaGetPositionForAsset {
+  openPositionFound: boolean;
+  position?: AlpacaApiGetPosition;
+  qty?: Decimal;
+  market_value?: Decimal;
 }
 
 export interface AlpacaGetLatestQuote {

@@ -35,8 +35,8 @@ import {
 } from "./alpaca.types";
 import {
   alpacaGetAccountBalance,
-  alpacaGetAvailableAssetBalance,
   alpacaGetCredentials,
+  alpacaGetPositionForAsset,
 } from "./alpacaAccount.utils";
 import {
   OrderSide,
@@ -45,7 +45,6 @@ import {
   type OrderRequest,
 } from "./alpacaApi.types";
 import { alpacaSchedulePriceCheckAtNextIntervalCronJob } from "./alpacaCronJobs";
-import { alpacaCheckLastFilledOrderType } from "./alpacaOrderHistory.utils";
 import {
   alpacaAreHoldingsClosed,
   alpacaCalculateProfitLoss,
@@ -102,14 +101,14 @@ export const alpacaSubmitPairTradeOrder = async ({
    *
    * Assumes there is only one order open at a time for a given symbol
    **/
+  const openPositionOfInverseTrade =
+    await alpacaGetPositionForAsset(alpacaInverseSymbol);
   if (
-    (await alpacaCheckLastFilledOrderType(alpacaInverseSymbol, accountName)) ===
-    OrderSide.BUY
+    openPositionOfInverseTrade.openPositionFound &&
+    openPositionOfInverseTrade.qty
   ) {
     if (isOutsideNasdaqTradingHours()) {
-      const assetBalance: Decimal = (
-        await alpacaGetAvailableAssetBalance(alpacaInverseSymbol)
-      ).qty;
+      const assetBalance: Decimal = openPositionOfInverseTrade.qty;
       await alpacaSubmitLimitOrderCustomQuantity({
         alpacaSymbol: alpacaInverseSymbol,
         quantity: assetBalance,
