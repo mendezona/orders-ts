@@ -249,7 +249,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   if (fractionable) {
     orderRequest = {
       symbol: alpacaSymbol,
-      notional: new Decimal(quantity).times(limitPrice).toNumber(),
+      qty: new Decimal(quantity).toNumber(),
       side: orderSide,
       type: orderType,
       time_in_force: timeInForce,
