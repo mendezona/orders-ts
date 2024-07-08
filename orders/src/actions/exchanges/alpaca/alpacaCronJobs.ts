@@ -68,6 +68,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
       body: JSON.stringify(jobData),
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      retries: 1,
     });
 
     console.log(
