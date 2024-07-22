@@ -3,7 +3,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
-import { type AlpacaQuote } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/entityv2";
+import {
+  type AlpacaBar,
+  type AlpacaQuote,
+} from "@alpacahq/alpaca-trade-api/dist/resources/datav2/entityv2";
 import * as Sentry from "@sentry/nextjs";
 // import { type GetQuotesParams } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/rest_v2";
 import Decimal from "decimal.js";
@@ -188,6 +191,7 @@ export const alpacaGetLatestQuote = async (
 
   while (attempts < maxAttempts) {
     try {
+      // Primary method: getLatestQuote
       const getLatestQuoteData: AlpacaQuote =
         await alpaca.getLatestQuote(symbol);
       if (!!getLatestQuoteData.BidPrice || !!getLatestQuoteData.AskPrice) {
@@ -205,25 +209,22 @@ export const alpacaGetLatestQuote = async (
         return convertedQuoteData;
       }
 
-      // // Backup method: getQuotesV2
-      // const quotesParams: GetQuotesParams = {
-      //   start: getStartOfCurrentTradingDay(),
-      //   limit: 1,
-      // };
-      // const getQuotesData = alpaca.getQuotesV2(symbol, quotesParams);
-      // for await (const quote of getQuotesData) {
-      //   if (quote.BidPrice !== undefined || quote.AskPrice !== undefined) {
-      //     const convertedQuoteData: AlpacaGetLatestQuote = {
-      //       askPrice: new Decimal(quote.AskPrice),
-      //       bidPrice: new Decimal(quote.BidPrice),
-      //       askSize: new Decimal(quote.AskSize),
-      //       bidSize: new Decimal(quote.BidSize),
-      //     };
+      // Backup method: getLatestBar
+      const latestBar: AlpacaBar = await alpaca.getLatestBar(symbol);
+      if (!!latestBar.HighPrice || !!latestBar.LowPrice) {
+        const convertedBarData: AlpacaGetLatestQuote = {
+          askPrice: new Decimal(latestBar.HighPrice),
+          bidPrice: new Decimal(latestBar.LowPrice),
+          askSize: new Decimal(0),
+          bidSize: new Decimal(0),
+        };
 
-      //     console.log("Quote Method 2 - Quote data found:", convertedQuoteData);
-      //     return convertedQuoteData;
-      //   }
-      // }
+        console.log(
+          "Quote Method 2 - Latest bar data found:",
+          convertedBarData,
+        );
+        return convertedBarData;
+      }
     } catch (error) {
       attempts++;
       console.error(
