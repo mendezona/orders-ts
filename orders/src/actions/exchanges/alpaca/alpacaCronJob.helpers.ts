@@ -126,7 +126,7 @@ export const alpacaGetNextAvailableTradingDay = async (
 
   for (const day of calendar) {
     const tradingDay = dayjs(day.date).tz("America/New_York");
-    if (tradingDay.isAfter(date)) {
+    if (tradingDay.isAfter(date, "day")) {
       console.log("Found next available trading day:", tradingDay);
       return tradingDay;
     }
