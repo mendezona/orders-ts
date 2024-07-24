@@ -68,7 +68,6 @@ export const TimeInForceSchema = z.enum([
   "ioc",
   "fok",
 ]);
-
 export type TimeInForce = z.infer<typeof TimeInForceSchema>;
 
 export const OrderStatusSchema = z.enum([
@@ -135,7 +134,6 @@ export const AlpacaApiPositionsSchema = z.array(PositionSchema);
 export const AlpacaApiGetPositionSchema = PositionSchema.extend({
   position: z.string(),
 }).partial();
-
 export type AlpacaApiGetPosition = z.infer<typeof AlpacaApiGetPositionSchema>;
 
 export const AlpacaApiTradeAccountSchema = z.object({
@@ -174,7 +172,6 @@ export const AlpacaApiTradeAccountSchema = z.object({
   options_approved_level: z.number().optional(),
   options_trading_level: z.number().optional(),
 });
-
 export type AlpacaApiTradeAccountSchema = z.infer<
   typeof AlpacaApiTradeAccountSchema
 >;
@@ -299,7 +296,4 @@ export const AlpacaCalendarSchema = z.object({
   session_close: z.string(),
   settlement_date: z.string(),
 });
-
 export type AlpacaCalendar = z.infer<typeof AlpacaCalendarSchema>;
-
-export const RawDataSchema = z.record(z.unknown());
