@@ -10,10 +10,12 @@ export const ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE: Decimal = new Decimal(
 );
 
 export const ALPACA_LIVE_TRADING_ACCOUNT_NAME = "alpacaTradingAccountNameLive";
+
 export const ALPACA_LIVE_TRADING_ENDPOINT = "https://api.alpaca.markets";
 
 export const ALPACA_PAPER_TRADING_ACCOUNT_NAME =
   "alpacaTradingAccountNamePaper";
+
 export const ALPACA_PAPER_TRADING_ENDPOINT = "https://paper-api.alpaca.markets";
 
 export const ALPACA_ACCOUNTS: Record<string, AlpacaAccountCredentials> = {

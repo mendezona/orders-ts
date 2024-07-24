@@ -8,10 +8,8 @@ import {
   type AlpacaQuote,
 } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/entityv2";
 import * as Sentry from "@sentry/nextjs";
-// import { type GetQuotesParams } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/rest_v2";
 import Decimal from "decimal.js";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca.constants";
-// import getStartOfCurrentTradingDay from "./alpaca.helpers";
 import { type AlpacaGetLatestQuote } from "./alpaca.types";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import {
