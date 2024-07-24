@@ -39,10 +39,11 @@ import {
   alpacaGetPositionForAsset,
 } from "./alpacaAccount.utils";
 import {
-  OrderSide,
-  OrderType,
-  TimeInForce,
   type OrderRequest,
+  type OrderSide,
+  OrderSideSchema,
+  OrderTypeSchema,
+  TimeInForceSchema,
 } from "./alpacaApi.types";
 import { alpacaSchedulePriceCheckAtNextIntervalCronJob } from "./alpacaCronJobs";
 import {
@@ -206,8 +207,8 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   limitPrice,
   buySideOrder = true,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-  orderType = OrderType.LIMIT,
-  timeInForce = TimeInForce.DAY,
+  orderType = OrderTypeSchema.Enum.limit,
+  timeInForce = TimeInForceSchema.Enum.day,
   setSlippagePercentage = new Decimal(0),
 }: AlpacaSubmitLimitOrderCustomQuantityParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
@@ -239,7 +240,9 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     }
   }
 
-  const orderSide: OrderSide = buySideOrder ? OrderSide.BUY : OrderSide.SELL;
+  const orderSide: OrderSide = buySideOrder
+    ? OrderSideSchema.enum.buy
+    : OrderSideSchema.Enum.sell;
   let orderRequest: OrderRequest;
   const fractionable: boolean = await alpacaIsAssetFractionable(
     alpacaSymbol,
@@ -306,8 +309,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-  orderType = OrderType.LIMIT,
-  timeInForce = TimeInForce.DAY,
+  orderType = OrderTypeSchema.Enum.limit,
+  timeInForce = TimeInForceSchema.Enum.day,
   limitPrice,
   setSlippagePercentage = new Decimal(0),
 }: AlpacaSubmitLimitOrderCustomPercentageParams): Promise<void> => {
@@ -358,7 +361,9 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     }
   }
 
-  const orderSide: OrderSide = buySideOrder ? OrderSide.BUY : OrderSide.SELL;
+  const orderSide: OrderSide = buySideOrder
+    ? OrderSideSchema.Enum.buy
+    : OrderSideSchema.Enum.sell;
   const fractionable: boolean = await alpacaIsAssetFractionable(
     alpacaSymbol,
     accountName,
@@ -435,8 +440,8 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-  orderType = OrderType.MARKET,
-  timeInForce = TimeInForce.DAY,
+  orderType = OrderTypeSchema.Enum.market,
+  timeInForce = TimeInForceSchema.Enum.day,
 }: AlpacaSubmitMarketOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
 
@@ -463,7 +468,9 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   }
 
   let orderRequest: OrderRequest;
-  const orderSide: OrderSide = buySideOrder ? OrderSide.BUY : OrderSide.SELL;
+  const orderSide: OrderSide = buySideOrder
+    ? OrderSideSchema.Enum.buy
+    : OrderSideSchema.Enum.sell;
   const fractionable: boolean = await alpacaIsAssetFractionable(
     alpacaSymbol,
     accountName,

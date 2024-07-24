@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
+import { ZodError } from "zod";
 import { getLatestTaxAmountCurrentFinancialYear } from "~/server/queries";
 import { DEVELOPMENT_MODE } from "../../actions.constants";
 import {
@@ -17,8 +15,8 @@ import {
   type AlpacaGetPositionForAsset,
 } from "./alpaca.types";
 import {
-  type AlpacaApiGetPosition,
-  type TradeAccount,
+  AlpacaApiGetPositionSchema,
+  AlpacaApiTradeAccountSchema,
 } from "./alpacaApi.types";
 
 /**
@@ -73,16 +71,17 @@ export const alpacaGetAccountBalance = async (
   });
 
   try {
-    const account = (await alpaca.getAccount()) satisfies TradeAccount;
+    const alpacaGetAccount: unknown = await alpaca.getAccount();
+    const account = AlpacaApiTradeAccountSchema.parse(alpacaGetAccount);
     const currentProfitAmount: string =
       await getLatestTaxAmountCurrentFinancialYear();
     const runningTotalOfTaxableProfits: Decimal = new Decimal(
       currentProfitAmount,
     );
-    const equity: Decimal = new Decimal(account.equity as string).minus(
+    const equity: Decimal = new Decimal(account.equity!).minus(
       runningTotalOfTaxableProfits,
     );
-    const cash: Decimal = new Decimal(account.cash as string).minus(
+    const cash: Decimal = new Decimal(account.cash!).minus(
       runningTotalOfTaxableProfits,
     );
 
@@ -96,7 +95,14 @@ export const alpacaGetAccountBalance = async (
     };
   } catch (error) {
     Sentry.captureException(error);
-    console.error("Error fetching account balance:", error);
+    if (error instanceof ZodError) {
+      console.error(
+        "alpacaGetAccountBalance - validation failed with ZodError:",
+        error.errors,
+      );
+    } else {
+      console.error("Error fetching account balance:", error);
+    }
     throw error;
   }
 };
@@ -122,9 +128,8 @@ export const alpacaGetPositionForAsset = async (
   });
 
   try {
-    const position: AlpacaApiGetPosition = (await alpaca.getPosition(
-      symbol,
-    )) satisfies AlpacaApiGetPosition;
+    const alpacaGetPosition: unknown = await alpaca.getPosition(symbol);
+    const position = AlpacaApiGetPositionSchema.parse(alpacaGetPosition);
 
     if (!position.qty || !position.market_value) {
       console.log("alpacaGetPositionForAsset - Position details not found");
@@ -145,11 +150,19 @@ export const alpacaGetPositionForAsset = async (
       market_value: new Decimal(position.market_value),
     };
   } catch (error) {
-    console.error(
-      "alpacaGetPositionForAsset - Error fetching position details:",
-      error,
-    );
-    console.log("alpacaGetPositionForAsset - Position details not found");
+    Sentry.captureException(error);
+    if (error instanceof ZodError) {
+      console.error(
+        "alpacaGetPositionForAsset - validation failed with ZodError:",
+        error.errors,
+      );
+    } else {
+      console.error(
+        "alpacaGetPositionForAsset - Error fetching position details:",
+        error,
+      );
+    }
+
     return {
       openPositionFound: false,
     };

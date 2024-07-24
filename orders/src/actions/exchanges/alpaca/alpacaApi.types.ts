@@ -1,109 +1,186 @@
-import { type UUID } from "crypto";
+import { z } from "zod";
 
-export interface AlpacaApiGetPosition extends Partial<Position> {
-  position: string;
-}
+export const QueryOrderStatusSchema = z.enum(["open", "closed", "open"]);
 
-export interface Position {
-  asset_id: UUID;
-  symbol: string;
-  exchange: AssetExchange;
-  asset_class: AssetClass;
-  asset_marginable?: boolean;
-  avg_entry_price: string;
-  qty: string;
-  side: PositionSide;
-  market_value?: string;
-  cost_basis: string;
-  unrealized_pl?: string;
-  unrealized_plpc?: string;
-  unrealized_intraday_pl?: string;
-  unrealized_intraday_plpc?: string;
-  current_price?: string;
-  lastday_price?: string;
-  change_today?: string;
-  swap_rate?: string;
-  avg_entry_swap_rate?: string;
-  usd?: USDPositionValues;
-  qty_available?: string;
-}
+export const AccountStatusSchema = z.enum([
+  "ACCOUNT_CLOSED",
+  "ACCOUNT_UPDATED",
+  "ACTION_REQUIRED",
+  "ACTIVE",
+  "AML_REVIEW",
+  "APPROVAL_PENDING",
+  "APPROVED",
+  "DISABLED",
+  "DISABLE_PENDING",
+  "EDITED",
+  "INACTIVE",
+  "KYC_SUBMITTED",
+  "LIMITED",
+  "ONBOARDING",
+  "PAPER_ONLY",
+  "REAPPROVAL_PENDING",
+  "REJECTED",
+  "RESUBMITTED",
+  "SIGNED_UP",
+  "SUBMISSION_FAILED",
+  "SUBMITTED",
+]);
 
-export interface AlapcaApiTradingAccount {
-  id: UUID;
-  account_number: string;
-  status: AccountStatus;
-  crypto_status?: AccountStatus;
-  currency?: string;
-  buying_power?: string;
-  regt_buying_power?: string;
-  daytrading_buying_power?: string;
-  non_marginable_buying_power?: string;
-  cash?: string;
-  accrued_fees?: string;
-  pending_transfer_out?: string;
-  pending_transfer_in?: string;
-  portfolio_value?: string;
-  pattern_day_trader?: boolean;
-  trading_blocked?: boolean;
-  transfers_blocked?: boolean;
-  account_blocked?: boolean;
-  created_at?: Date;
-  trade_suspended_by_user?: boolean;
-  multiplier?: string;
-  shorting_enabled?: boolean;
-  equity?: string;
-  last_equity?: string;
-  long_market_value?: string;
-  short_market_value?: string;
-  initial_margin?: string;
-  maintenance_margin?: string;
-  last_maintenance_margin?: string;
-  sma?: string;
-  daytrade_count?: number;
-  options_buying_power?: string;
-  options_approved_level?: number;
-  options_trading_level?: number;
-}
+export const AssetExchangeSchema = z.enum([
+  "AMEX",
+  "ARCA",
+  "BATS",
+  "NYSE",
+  "NASDAQ",
+  "NYSEARCA",
+  "FTXU",
+  "CBSE",
+  "GNSS",
+  "ERSX",
+  "OTC",
+  "CRYPTO",
+  "",
+]);
 
-export interface TradeAccount {
-  id: UUID;
-  account_number: string;
-  status: AccountStatus;
-  crypto_status?: AccountStatus;
-  currency?: string;
-  buying_power?: string;
-  regt_buying_power?: string;
-  daytrading_buying_power?: string;
-  non_marginable_buying_power?: string;
-  cash?: string;
-  accrued_fees?: string;
-  pending_transfer_out?: string;
-  pending_transfer_in?: string;
-  portfolio_value?: string;
-  pattern_day_trader?: boolean;
-  trading_blocked?: boolean;
-  transfers_blocked?: boolean;
-  account_blocked?: boolean;
-  created_at?: Date;
-  trade_suspended_by_user?: boolean;
-  multiplier?: string;
-  shorting_enabled?: boolean;
-  equity?: string;
-  last_equity?: string;
-  long_market_value?: string;
-  short_market_value?: string;
-  initial_margin?: string;
-  maintenance_margin?: string;
-  last_maintenance_margin?: string;
-  sma?: string;
-  daytrade_count?: number;
-  options_buying_power?: string;
-  options_approved_level?: number;
-  options_trading_level?: number;
-}
+export const AssetClassSchema = z.enum(["us_equity", "us_option", "crypto"]);
 
-export interface Order {
-  id: UUID;
+export const PositionSideSchema = z.enum(["short", "long"]);
+
+export const OrderSideSchema = z.enum(["buy", "sell"]);
+export type OrderSide = z.infer<typeof OrderSideSchema>;
+
+export const OrderClassSchema = z.enum(["simple", "bracket", "oco", "oto"]);
+
+export const OrderTypeSchema = z.enum([
+  "market",
+  "limit",
+  "stop",
+  "stop_limit",
+  "trailing_stop",
+]);
+export type OrderType = z.infer<typeof OrderTypeSchema>;
+
+export const TimeInForceSchema = z.enum([
+  "day",
+  "gtc",
+  "opg",
+  "cls",
+  "ioc",
+  "fok",
+]);
+
+export type TimeInForce = z.infer<typeof TimeInForceSchema>;
+
+export const OrderStatusSchema = z.enum([
+  "new",
+  "partially_filled",
+  "filled",
+  "done_for_day",
+  "canceled",
+  "expired",
+  "replaced",
+  "pending_cancel",
+  "pending_replace",
+  "pending_review",
+  "accepted",
+  "pending_new",
+  "accepted_for_bidding",
+  "stopped",
+  "rejected",
+  "suspended",
+  "calculated",
+  "held",
+]);
+
+export const AssetStatusSchema = z.enum(["active", "inactive"]);
+
+export const USDPositionValuesSchema = z.object({
+  avg_entry_price: z.string(),
+  market_value: z.string(),
+  cost_basis: z.string(),
+  unrealized_pl: z.string(),
+  unrealized_plpc: z.string(),
+  unrealized_intraday_pl: z.string(),
+  unrealized_intraday_plpc: z.string(),
+  current_price: z.string(),
+  lastday_price: z.string(),
+  change_today: z.string(),
+});
+
+export const PositionSchema = z.object({
+  asset_id: z.string().uuid(),
+  symbol: z.string(),
+  exchange: AssetExchangeSchema,
+  asset_class: AssetClassSchema,
+  asset_marginable: z.boolean().optional(),
+  avg_entry_price: z.string(),
+  qty: z.string(),
+  side: PositionSideSchema,
+  market_value: z.string().optional(),
+  cost_basis: z.string(),
+  unrealized_pl: z.string().optional(),
+  unrealized_plpc: z.string().optional(),
+  unrealized_intraday_pl: z.string().optional(),
+  unrealized_intraday_plpc: z.string().optional(),
+  current_price: z.string().optional(),
+  lastday_price: z.string().optional(),
+  change_today: z.string().optional(),
+  swap_rate: z.string().optional(),
+  avg_entry_swap_rate: z.string().optional(),
+  usd: USDPositionValuesSchema.optional(),
+  qty_available: z.string().optional(),
+});
+export const AlpacaApiPositionsSchema = z.array(PositionSchema);
+
+export const AlpacaApiGetPositionSchema = PositionSchema.extend({
+  position: z.string(),
+}).partial();
+
+export type AlpacaApiGetPosition = z.infer<typeof AlpacaApiGetPositionSchema>;
+
+export const AlpacaApiTradeAccountSchema = z.object({
+  id: z.string().uuid(),
+  account_number: z.string(),
+  status: AccountStatusSchema,
+  crypto_status: AccountStatusSchema.optional(),
+  currency: z.string().optional(),
+  buying_power: z.string().optional(),
+  regt_buying_power: z.string().optional(),
+  daytrading_buying_power: z.string().optional(),
+  non_marginable_buying_power: z.string().optional(),
+  cash: z.string().optional(),
+  accrued_fees: z.string().optional(),
+  pending_transfer_out: z.string().optional(),
+  pending_transfer_in: z.string().optional(),
+  portfolio_value: z.string().optional(),
+  pattern_day_trader: z.boolean().optional(),
+  trading_blocked: z.boolean().optional(),
+  transfers_blocked: z.boolean().optional(),
+  account_blocked: z.boolean().optional(),
+  created_at: z.date().optional(),
+  trade_suspended_by_user: z.boolean().optional(),
+  multiplier: z.string().optional(),
+  shorting_enabled: z.boolean().optional(),
+  equity: z.string().optional(),
+  last_equity: z.string().optional(),
+  long_market_value: z.string().optional(),
+  short_market_value: z.string().optional(),
+  initial_margin: z.string().optional(),
+  maintenance_margin: z.string().optional(),
+  last_maintenance_margin: z.string().optional(),
+  sma: z.string().optional(),
+  daytrade_count: z.number().optional(),
+  options_buying_power: z.string().optional(),
+  options_approved_level: z.number().optional(),
+  options_trading_level: z.number().optional(),
+});
+
+export type AlpacaApiTradeAccountSchema = z.infer<
+  typeof AlpacaApiTradeAccountSchema
+>;
+
+type Order = {
+  id: string;
   client_order_id: string;
   created_at: Date;
   updated_at: Date;
@@ -113,199 +190,116 @@ export interface Order {
   canceled_at?: Date;
   failed_at?: Date;
   replaced_at?: Date;
-  replaced_by?: UUID;
-  replaces?: UUID;
-  asset_id: UUID;
+  replaced_by?: string;
+  replaces?: string;
+  asset_id: string;
   symbol: string;
-  asset_class: AssetClass;
+  asset_class: z.infer<typeof AssetClassSchema>;
   notional?: string;
   qty?: string | number;
   filled_qty?: string | number;
   filled_avg_price?: string | number;
-  order_class: OrderClass;
-  order_type: OrderType;
-  type: OrderType;
-  side: OrderSide;
-  time_in_force: TimeInForce;
+  order_class: z.infer<typeof OrderClassSchema>;
+  order_type: z.infer<typeof OrderTypeSchema>;
+  type: z.infer<typeof OrderTypeSchema>;
+  side: z.infer<typeof OrderSideSchema>;
+  time_in_force: z.infer<typeof TimeInForceSchema>;
   limit_price?: string | number;
   stop_price?: string | number;
-  status: OrderStatus;
+  status: z.infer<typeof OrderStatusSchema>;
   extended_hours: boolean;
   legs?: Order[];
   trail_percent?: string;
   trail_price?: string;
   hwm?: string;
-}
+};
 
-export interface OrderRequest {
-  symbol: string;
-  qty?: number;
-  notional?: number;
-  side: OrderSide;
-  type: OrderType;
-  time_in_force: TimeInForce;
-  limit_price?: number;
-  stop_price?: number;
-  client_order_id?: string;
-  extended_hours?: boolean;
-  order_class?: string;
-  take_profit?: object;
-  stop_loss?: object;
-  trail_price?: string;
-  trail_percent?: string;
-}
+const OrderSchema: z.ZodType<Order> = z.lazy(() =>
+  z.object({
+    id: z.string().uuid(),
+    client_order_id: z.string(),
+    created_at: z.date(),
+    updated_at: z.date(),
+    submitted_at: z.date(),
+    filled_at: z.date().optional(),
+    expired_at: z.date().optional(),
+    canceled_at: z.date().optional(),
+    failed_at: z.date().optional(),
+    replaced_at: z.date().optional(),
+    replaced_by: z.string().uuid().optional(),
+    replaces: z.string().uuid().optional(),
+    asset_id: z.string().uuid(),
+    symbol: z.string(),
+    asset_class: AssetClassSchema,
+    notional: z.string().optional(),
+    qty: z.union([z.string(), z.number()]).optional(),
+    filled_qty: z.union([z.string(), z.number()]).optional(),
+    filled_avg_price: z.union([z.string(), z.number()]).optional(),
+    order_class: OrderClassSchema,
+    order_type: OrderTypeSchema,
+    type: OrderTypeSchema,
+    side: OrderSideSchema,
+    time_in_force: TimeInForceSchema,
+    limit_price: z.union([z.string(), z.number()]).optional(),
+    stop_price: z.union([z.string(), z.number()]).optional(),
+    status: OrderStatusSchema,
+    extended_hours: z.boolean(),
+    legs: z.array(z.lazy(() => OrderSchema)).optional(),
+    trail_percent: z.string().optional(),
+    trail_price: z.string().optional(),
+    hwm: z.string().optional(),
+  }),
+);
+export { OrderSchema };
+export const OrdersSchema = z.array(OrderSchema);
 
-export interface Asset {
-  id: UUID;
-  asset_class: AssetClass;
-  exchange: AssetExchange;
-  symbol: string;
-  name?: string;
-  status: AssetStatus;
-  tradable: boolean;
-  marginable: boolean;
-  shortable: boolean;
-  easy_to_borrow: boolean;
-  fractionable: boolean;
-  min_order_size?: number;
-  min_trade_increment?: number;
-  price_increment?: number;
-  maintenance_margin_requirement?: number;
-  attributes?: string[];
-}
+export const OrderRequestSchema = z.object({
+  symbol: z.string(),
+  qty: z.number().optional(),
+  notional: z.number().optional(),
+  side: OrderSideSchema,
+  type: OrderTypeSchema,
+  time_in_force: TimeInForceSchema,
+  limit_price: z.number().optional(),
+  stop_price: z.number().optional(),
+  client_order_id: z.string().optional(),
+  extended_hours: z.boolean().optional(),
+  order_class: z.string().optional(),
+  take_profit: z.record(z.unknown()).optional(),
+  stop_loss: z.record(z.unknown()).optional(),
+  trail_price: z.string().optional(),
+  trail_percent: z.string().optional(),
+});
+export type OrderRequest = z.infer<typeof OrderRequestSchema>;
 
-export interface USDPositionValues {
-  avg_entry_price: string;
-  market_value: string;
-  cost_basis: string;
-  unrealized_pl: string;
-  unrealized_plpc: string;
-  unrealized_intraday_pl: string;
-  unrealized_intraday_plpc: string;
-  current_price: string;
-  lastday_price: string;
-  change_today: string;
-}
+export const AssetSchema = z.object({
+  id: z.string().uuid(),
+  asset_class: AssetClassSchema,
+  exchange: AssetExchangeSchema,
+  symbol: z.string(),
+  name: z.string().optional(),
+  status: AssetStatusSchema,
+  tradable: z.boolean(),
+  marginable: z.boolean(),
+  shortable: z.boolean(),
+  easy_to_borrow: z.boolean(),
+  fractionable: z.boolean(),
+  min_order_size: z.number().optional(),
+  min_trade_increment: z.number().optional(),
+  price_increment: z.number().optional(),
+  maintenance_margin_requirement: z.number().optional(),
+  attributes: z.array(z.string()).optional(),
+});
 
-export enum AccountStatus {
-  ACCOUNT_CLOSED = "ACCOUNT_CLOSED",
-  ACCOUNT_UPDATED = "ACCOUNT_UPDATED",
-  ACTION_REQUIRED = "ACTION_REQUIRED",
-  ACTIVE = "ACTIVE",
-  AML_REVIEW = "AML_REVIEW",
-  APPROVAL_PENDING = "APPROVAL_PENDING",
-  APPROVED = "APPROVED",
-  DISABLED = "DISABLED",
-  DISABLE_PENDING = "DISABLE_PENDING",
-  EDITED = "EDITED",
-  INACTIVE = "INACTIVE",
-  KYC_SUBMITTED = "KYC_SUBMITTED",
-  LIMITED = "LIMITED",
-  ONBOARDING = "ONBOARDING",
-  PAPER_ONLY = "PAPER_ONLY",
-  REAPPROVAL_PENDING = "REAPPROVAL_PENDING",
-  REJECTED = "REJECTED",
-  RESUBMITTED = "RESUBMITTED",
-  SIGNED_UP = "SIGNED_UP",
-  SUBMISSION_FAILED = "SUBMISSION_FAILED",
-  SUBMITTED = "SUBMITTED",
-}
+export const AlpacaCalendarSchema = z.object({
+  date: z.string(),
+  open: z.string(),
+  close: z.string(),
+  session_open: z.string(),
+  session_close: z.string(),
+  settlement_date: z.string(),
+});
 
-export enum AssetExchange {
-  AMEX = "AMEX",
-  ARCA = "ARCA",
-  BATS = "BATS",
-  NYSE = "NYSE",
-  NASDAQ = "NASDAQ",
-  NYSEARCA = "NYSEARCA",
-  FTXU = "FTXU",
-  CBSE = "CBSE",
-  GNSS = "GNSS",
-  ERSX = "ERSX",
-  OTC = "OTC",
-  CRYPTO = "CRYPTO",
-  EMPTY = "",
-}
+export type AlpacaCalendar = z.infer<typeof AlpacaCalendarSchema>;
 
-export enum AssetClass {
-  US_EQUITY = "us_equity",
-  US_OPTION = "us_option",
-  CRYPTO = "crypto",
-}
-
-export enum QueryOrderStatus {
-  OPEN = "open",
-  CLOSED = "closed",
-  ALL = "all",
-}
-
-export enum PositionSide {
-  SHORT = "short",
-  LONG = "long",
-}
-
-export enum OrderSide {
-  BUY = "buy",
-  SELL = "sell",
-}
-
-export enum OrderClass {
-  SIMPLE = "simple",
-  BRACKET = "bracket",
-  OCO = "oco",
-  OTO = "oto",
-}
-
-export enum OrderType {
-  MARKET = "market",
-  LIMIT = "limit",
-  STOP = "stop",
-  STOP_LIMIT = "stop_limit",
-  TRAILING_STOP = "trailing_stop",
-}
-
-export enum TimeInForce {
-  DAY = "day",
-  GTC = "gtc",
-  OPG = "opg",
-  CLS = "cls",
-  IOC = "ioc",
-  FOK = "fok",
-}
-
-export enum OrderStatus {
-  NEW = "new",
-  PARTIALLY_FILLED = "partially_filled",
-  FILLED = "filled",
-  DONE_FOR_DAY = "done_for_day",
-  CANCELED = "canceled",
-  EXPIRED = "expired",
-  REPLACED = "replaced",
-  PENDING_CANCEL = "pending_cancel",
-  PENDING_REPLACE = "pending_replace",
-  PENDING_REVIEW = "pending_review",
-  ACCEPTED = "accepted",
-  PENDING_NEW = "pending_new",
-  ACCEPTED_FOR_BIDDING = "accepted_for_bidding",
-  STOPPED = "stopped",
-  REJECTED = "rejected",
-  SUSPENDED = "suspended",
-  CALCULATED = "calculated",
-  HELD = "held",
-}
-
-export enum AssetStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-}
-
-export interface AlpacaCalendar {
-  date: string;
-  open: string;
-  close: string;
-  session_open: string;
-  session_close: string;
-  settlement_date: string;
-}
-
-export type RawData = Record<string, unknown>;
+export const RawDataSchema = z.record(z.unknown());

@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import {
   type AlpacaBar,
@@ -9,15 +5,16 @@ import {
 } from "@alpacahq/alpaca-trade-api/dist/resources/datav2/entityv2";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
+import { ZodError } from "zod";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca.constants";
 import { type AlpacaGetLatestQuote } from "./alpaca.types";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import {
-  OrderSide,
-  QueryOrderStatus,
-  type Asset,
-  type Order,
-  type Position,
+  AlpacaApiPositionsSchema,
+  AssetSchema,
+  OrderSideSchema,
+  OrdersSchema,
+  QueryOrderStatusSchema,
 } from "./alpacaApi.types";
 
 /**
@@ -44,15 +41,23 @@ export const alpacaIsAssetFractionable = async (
   });
 
   try {
-    const asset: Asset = (await alpaca.getAsset(symbol)) satisfies Asset;
+    const alpacaAsset: unknown = await alpaca.getAsset(symbol);
+    const asset = AssetSchema.parse(alpacaAsset);
     console.log(`${symbol} fractionable:`, asset.fractionable);
     return asset.fractionable;
   } catch (error) {
     Sentry.captureException(error);
-    console.error(
-      `Error - Unable to determine if asset is fractionable:`,
-      error,
-    );
+    if (error instanceof ZodError) {
+      console.error(
+        "alpacaIsAssetFractionable - validation failed with ZodError:",
+        error.errors,
+      );
+    } else {
+      console.error(
+        `alpacaIsAssetFractionable - Error - Unable to determine if asset is fractionable:`,
+        error,
+      );
+    }
     throw new Error(`Error - Unable to determine if asset is fractionable`);
   }
 };
@@ -81,87 +86,104 @@ export const alpacaCalculateProfitLoss = async (
     paper: credentials.paper,
   });
 
-  // Fetch the most recent orders, considering a reasonable limit
-  const orders: Order[] = await alpaca.getOrders({
-    symbols: symbol,
-    status: QueryOrderStatus.CLOSED,
-    limit: 20,
-    until: null,
-    after: null,
-    direction: null,
-    nested: null,
-  });
+  try {
+    // Fetch the most recent orders, considering a reasonable limit
+    const alpacaRecentOrders: unknown = await alpaca.getOrders({
+      symbols: symbol,
+      status: QueryOrderStatusSchema.Enum.closed,
+      limit: 20,
+      until: null,
+      after: null,
+      direction: null,
+      nested: null,
+    });
+    const orders = OrdersSchema.parse(alpacaRecentOrders);
 
-  // Find accumulated sale amount (could be split in multiple orders)
-  let accumulatedSellQuantity: Decimal = new Decimal(0);
-  let totalSellValue: Decimal = new Decimal(0);
-  let firstBuyOrderFound = false;
+    // Find accumulated sale amount (could be split in multiple orders)
+    let accumulatedSellQuantity: Decimal = new Decimal(0);
+    let totalSellValue: Decimal = new Decimal(0);
+    let firstBuyOrderFound = false;
 
-  for (const order of [...orders]) {
-    if (order.side === OrderSide.BUY) {
-      firstBuyOrderFound = true;
-      break;
-    }
+    for (const order of [...orders]) {
+      if (order.side === OrderSideSchema.Enum.buy) {
+        firstBuyOrderFound = true;
+        break;
+      }
 
-    if (!firstBuyOrderFound && order.side === OrderSide.SELL) {
-      const filledQty = new Decimal(order.filled_qty ?? 0);
-      const filledAvgPrice = new Decimal(order.filled_avg_price ?? 0);
-      const sellValue = !!order.notional
-        ? new Decimal(order.notional)
-        : filledQty.times(filledAvgPrice);
-      totalSellValue = totalSellValue.plus(sellValue);
-      accumulatedSellQuantity = accumulatedSellQuantity.plus(filledQty);
-    }
-  }
-
-  console.log(
-    `Sell price: ${totalSellValue.toString()}, and sell quantity: ${accumulatedSellQuantity.toString()}`,
-  );
-
-  const sellQuantityNeeded: Decimal = accumulatedSellQuantity;
-  let accumulatedBuyQuantity: Decimal = new Decimal(0);
-  let totalBuyCost: Decimal = new Decimal(0);
-
-  for (const order of [...orders]) {
-    if (order.side === OrderSide.BUY) {
-      if (!!order.filled_qty && !!order.filled_avg_price) {
-        const buyQuantity = new Decimal(order.filled_qty);
-        const buyPrice = new Decimal(order.filled_avg_price);
-
-        // Determine how much of this order to use
-        const quantityToUse = Decimal.min(
-          buyQuantity,
-          sellQuantityNeeded.minus(accumulatedBuyQuantity),
-        );
-        totalBuyCost = !!order.notional
+      if (!firstBuyOrderFound && order.side === OrderSideSchema.Enum.sell) {
+        const filledQty = new Decimal(order.filled_qty ?? 0);
+        const filledAvgPrice = new Decimal(order.filled_avg_price ?? 0);
+        const sellValue = !!order.notional
           ? new Decimal(order.notional)
-          : totalBuyCost.plus(quantityToUse.times(buyPrice));
-        accumulatedBuyQuantity = accumulatedBuyQuantity.plus(quantityToUse);
+          : filledQty.times(filledAvgPrice);
+        totalSellValue = totalSellValue.plus(sellValue);
+        accumulatedSellQuantity = accumulatedSellQuantity.plus(filledQty);
+      }
+    }
 
-        if (accumulatedBuyQuantity.greaterThanOrEqualTo(sellQuantityNeeded)) {
-          break;
+    console.log(
+      `Sell price: ${totalSellValue.toString()}, and sell quantity: ${accumulatedSellQuantity.toString()}`,
+    );
+
+    const sellQuantityNeeded: Decimal = accumulatedSellQuantity;
+    let accumulatedBuyQuantity: Decimal = new Decimal(0);
+    let totalBuyCost: Decimal = new Decimal(0);
+
+    for (const order of [...orders]) {
+      if (order.side === OrderSideSchema.enum.buy) {
+        if (!!order.filled_qty && !!order.filled_avg_price) {
+          const buyQuantity = new Decimal(order.filled_qty);
+          const buyPrice = new Decimal(order.filled_avg_price);
+
+          // Determine how much of this order to use
+          const quantityToUse = Decimal.min(
+            buyQuantity,
+            sellQuantityNeeded.minus(accumulatedBuyQuantity),
+          );
+          totalBuyCost = !!order.notional
+            ? new Decimal(order.notional)
+            : totalBuyCost.plus(quantityToUse.times(buyPrice));
+          accumulatedBuyQuantity = accumulatedBuyQuantity.plus(quantityToUse);
+
+          if (accumulatedBuyQuantity.greaterThanOrEqualTo(sellQuantityNeeded)) {
+            break;
+          }
         }
       }
     }
+
+    if (accumulatedBuyQuantity.lessThan(sellQuantityNeeded)) {
+      const errorMessage = "Not enough buy orders to match the sell quantity.";
+      console.log(errorMessage);
+      Sentry.captureMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    console.log("Buy price:", totalBuyCost.toString());
+    console.log("Sell price:", totalSellValue.toString());
+
+    // Calculate profit or loss
+    const profitLoss: Decimal = totalSellValue.minus(totalBuyCost);
+    console.log(
+      "alpacaCalculateProfitLoss - Total Profit Loss:",
+      profitLoss.toString(),
+    );
+    return profitLoss;
+  } catch (error) {
+    Sentry.captureException(error);
+    if (error instanceof ZodError) {
+      console.error(
+        "alpacaCalculateProfitLoss - validation failed with ZodError:",
+        error.errors,
+      );
+    } else {
+      console.error(
+        `alpacaCalculateProfitLoss - Error - Unable to determine profit or loss:`,
+        error,
+      );
+    }
+    throw new Error(`Error - Unable to determine profit or loss`);
   }
-
-  if (accumulatedBuyQuantity.lessThan(sellQuantityNeeded)) {
-    const errorMessage = "Not enough buy orders to match the sell quantity.";
-    console.log(errorMessage);
-    Sentry.captureMessage(errorMessage);
-    throw new Error(errorMessage);
-  }
-
-  console.log("Buy price:", totalBuyCost.toString());
-  console.log("Sell price:", totalSellValue.toString());
-
-  // Calculate profit or loss
-  const profitLoss: Decimal = totalSellValue.minus(totalBuyCost);
-  console.log(
-    "alpacaCalculateProfitLoss - Total Profit Loss:",
-    profitLoss.toString(),
-  );
-  return profitLoss;
 };
 
 /**
@@ -270,7 +292,8 @@ export const alpacaAreHoldingsClosed = async (
   });
 
   try {
-    const openPositions = (await alpaca.getPositions()) satisfies Position[];
+    const alpacaOpenPositions: unknown = await alpaca.getPositions();
+    const openPositions = AlpacaApiPositionsSchema.parse(alpacaOpenPositions);
     for (const position of openPositions) {
       if (position.symbol === symbol && parseFloat(position.qty) > 0) {
         console.log(`Open position for ${symbol} found`);
@@ -284,10 +307,19 @@ export const alpacaAreHoldingsClosed = async (
     return true;
   } catch (error) {
     Sentry.captureException(error);
-    console.error(
+    if (error instanceof ZodError) {
+      console.error(
+        "alpacaCalculateProfitLoss - validation failed with ZodError:",
+        error.errors,
+      );
+    } else {
+      console.error(
+        `alpacaAreHoldingsClosed - Error, position data for ${symbol}:`,
+        error,
+      );
+    }
+    throw new Error(
       `alpacaAreHoldingsClosed - Error, position data for ${symbol}:`,
-      error,
     );
-    throw error;
   }
 };

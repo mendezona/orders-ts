@@ -1,9 +1,9 @@
 import type Decimal from "decimal.js";
 import {
   type AlpacaApiGetPosition,
+  type AlpacaApiTradeAccountSchema,
   type OrderType,
   type TimeInForce,
-  type TradeAccount,
 } from "./alpacaApi.types";
 
 export interface AlpacaAccountCredentials {
@@ -14,7 +14,7 @@ export interface AlpacaAccountCredentials {
 }
 
 export interface AlpacaGetAccountBalance {
-  account: TradeAccount;
+  account: AlpacaApiTradeAccountSchema;
   accountEquity: Decimal;
   accountCash: Decimal;
 }
