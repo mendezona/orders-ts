@@ -6,7 +6,7 @@ export const ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE: Decimal = new Decimal(
 );
 
 export const ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE: Decimal = new Decimal(
-  0.03,
+  0.005,
 );
 
 export const ALPACA_LIVE_TRADING_ACCOUNT_NAME = "alpacaTradingAccountNameLive";
