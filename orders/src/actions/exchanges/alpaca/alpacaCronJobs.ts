@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import Decimal from "decimal.js";
-import { QSTASH_ALPACA_CRON_JOB_PRICE_CHECK_INTERVAL_TOPIC } from "~/actions/actions.constants";
+import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
 import { getLatestFlipAlertForSymbol } from "~/server/queries";
 import { type FlipAlertItem } from "~/server/queries.types";
 import {
@@ -63,7 +63,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
 
   try {
     const response = await client.publish({
-      topic: QSTASH_ALPACA_CRON_JOB_PRICE_CHECK_INTERVAL_TOPIC,
+      url: `${ORDER_TS_BASE_URL}/api/alpaca/checkpriceatnextinterval`,
       delay: delayInSeconds,
       body: JSON.stringify(jobData),
       method: "POST",
