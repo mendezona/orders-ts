@@ -57,8 +57,7 @@ export async function POST(request: Request) {
 
     return new Response(
       JSON.stringify({
-        message:
-          "Endpoint success - alpaca/pairtradesellalert - buy order submitted",
+        message: `Endpoint success - alpaca/pairtradesellalert - SHORT position opened for: ${tradingViewAlert.ticker}`,
       }),
       {
         status: 200,
