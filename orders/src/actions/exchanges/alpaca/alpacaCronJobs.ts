@@ -89,7 +89,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
  * Reverses the trade for the specified stock ticker symbol if last trade price is greater than quote price.
  *
  * @param tradingViewSymbol - The stock or crypto ticker symbol.
- * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa).
+ * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa). This should be set to the original alert, eg. if alert was to go long this should be set to true.
  */
 export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
   tradingViewSymbol,
