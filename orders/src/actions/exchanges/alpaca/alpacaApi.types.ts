@@ -94,40 +94,40 @@ export const OrderStatusSchema = z.enum([
 export const AssetStatusSchema = z.enum(["active", "inactive"]);
 
 export const USDPositionValuesSchema = z.object({
-  avg_entry_price: z.string(),
-  market_value: z.string(),
-  cost_basis: z.string(),
-  unrealized_pl: z.string(),
-  unrealized_plpc: z.string(),
-  unrealized_intraday_pl: z.string(),
-  unrealized_intraday_plpc: z.string(),
-  current_price: z.string(),
-  lastday_price: z.string(),
-  change_today: z.string(),
+  avg_entry_price: z.string().optional().nullable(),
+  market_value: z.string().optional().nullable(),
+  cost_basis: z.string().optional().nullable(),
+  unrealized_pl: z.string().optional().nullable(),
+  unrealized_plpc: z.string().optional().nullable(),
+  unrealized_intraday_pl: z.string().optional().nullable(),
+  unrealized_intraday_plpc: z.string().optional().nullable(),
+  current_price: z.string().optional().nullable(),
+  lastday_price: z.string().optional().nullable(),
+  change_today: z.string().optional().nullable(),
 });
 
 export const PositionSchema = z.object({
-  asset_id: z.string().uuid(),
-  symbol: z.string(),
-  exchange: AssetExchangeSchema,
-  asset_class: AssetClassSchema,
-  asset_marginable: z.boolean().optional(),
-  avg_entry_price: z.string(),
+  asset_id: z.string().uuid().optional().nullable(),
+  symbol: z.string().optional().nullable(),
+  exchange: AssetExchangeSchema.optional().nullable().or(z.literal("")),
+  asset_class: AssetClassSchema.optional().nullable().or(z.literal("")),
+  asset_marginable: z.boolean().optional().nullable(),
+  avg_entry_price: z.string().optional().nullable(),
   qty: z.string(),
-  side: PositionSideSchema,
-  market_value: z.string().optional(),
-  cost_basis: z.string(),
-  unrealized_pl: z.string().optional(),
-  unrealized_plpc: z.string().optional(),
-  unrealized_intraday_pl: z.string().optional(),
-  unrealized_intraday_plpc: z.string().optional(),
-  current_price: z.string().optional(),
-  lastday_price: z.string().optional(),
-  change_today: z.string().optional(),
-  swap_rate: z.string().optional(),
-  avg_entry_swap_rate: z.string().optional(),
-  usd: USDPositionValuesSchema.optional(),
-  qty_available: z.string().optional(),
+  side: PositionSideSchema.optional().nullable().or(z.literal("")),
+  market_value: z.string().optional().nullable(),
+  cost_basis: z.string().optional().nullable(),
+  unrealized_pl: z.string().optional().nullable(),
+  unrealized_plpc: z.string().optional().nullable(),
+  unrealized_intraday_pl: z.string().optional().nullable(),
+  unrealized_intraday_plpc: z.string().optional().nullable(),
+  current_price: z.string().optional().nullable(),
+  lastday_price: z.string().optional().nullable(),
+  change_today: z.string().optional().nullable(),
+  swap_rate: z.string().optional().nullable(),
+  avg_entry_swap_rate: z.string().optional().nullable(),
+  usd: USDPositionValuesSchema.optional().nullable(),
+  qty_available: z.string().optional().nullable(),
 });
 export const AlpacaApiPositionsSchema = z.array(PositionSchema);
 
@@ -137,163 +137,167 @@ export const AlpacaApiGetPositionSchema = PositionSchema.extend({
 export type AlpacaApiGetPosition = z.infer<typeof AlpacaApiGetPositionSchema>;
 
 export const AlpacaApiTradeAccountSchema = z.object({
-  id: z.string().uuid(),
-  account_number: z.string(),
-  status: AccountStatusSchema,
-  crypto_status: AccountStatusSchema.optional(),
-  currency: z.string().optional(),
-  buying_power: z.string().optional(),
-  regt_buying_power: z.string().optional(),
-  daytrading_buying_power: z.string().optional(),
-  non_marginable_buying_power: z.string().optional(),
-  cash: z.string().optional(),
-  accrued_fees: z.string().optional(),
-  pending_transfer_out: z.string().optional(),
-  pending_transfer_in: z.string().optional(),
-  portfolio_value: z.string().optional(),
-  pattern_day_trader: z.boolean().optional(),
-  trading_blocked: z.boolean().optional(),
-  transfers_blocked: z.boolean().optional(),
-  account_blocked: z.boolean().optional(),
-  created_at: z.date().optional(),
-  trade_suspended_by_user: z.boolean().optional(),
-  multiplier: z.string().optional(),
-  shorting_enabled: z.boolean().optional(),
-  equity: z.string().optional(),
-  last_equity: z.string().optional(),
-  long_market_value: z.string().optional(),
-  short_market_value: z.string().optional(),
-  initial_margin: z.string().optional(),
-  maintenance_margin: z.string().optional(),
-  last_maintenance_margin: z.string().optional(),
-  sma: z.string().optional(),
-  daytrade_count: z.number().optional(),
-  options_buying_power: z.string().optional(),
-  options_approved_level: z.number().optional(),
-  options_trading_level: z.number().optional(),
+  id: z.string().uuid().nullable(),
+  account_number: z.string().nullable(),
+  status: AccountStatusSchema.optional().or(z.literal("")).nullable(),
+  crypto_status: AccountStatusSchema.optional().or(z.literal("")).nullable(),
+  currency: z.string().optional().nullable(),
+  buying_power: z.string().optional().nullable(),
+  regt_buying_power: z.string().optional().nullable(),
+  daytrading_buying_power: z.string().optional().nullable(),
+  non_marginable_buying_power: z.string().optional().nullable(),
+  cash: z.string().optional().nullable(),
+  accrued_fees: z.string().optional().nullable(),
+  pending_transfer_out: z.string().optional().nullable(),
+  pending_transfer_in: z.string().optional().nullable(),
+  portfolio_value: z.string().optional().nullable(),
+  pattern_day_trader: z.boolean().optional().nullable(),
+  trading_blocked: z.boolean().optional().nullable(),
+  transfers_blocked: z.boolean().optional().nullable(),
+  account_blocked: z.boolean().optional().nullable(),
+  created_at: z.string().optional().nullable(),
+  trade_suspended_by_user: z.boolean().optional().nullable(),
+  multiplier: z.string().optional().nullable(),
+  shorting_enabled: z.boolean().optional().nullable(),
+  equity: z.string().optional().nullable(),
+  last_equity: z.string().optional().nullable(),
+  long_market_value: z.string().optional().nullable(),
+  short_market_value: z.string().optional().nullable(),
+  initial_margin: z.string().optional().nullable(),
+  maintenance_margin: z.string().optional().nullable(),
+  last_maintenance_margin: z.string().optional().nullable(),
+  sma: z.string().optional().nullable(),
+  daytrade_count: z.number().optional().nullable(),
+  options_buying_power: z.string().optional().nullable(),
+  options_approved_level: z.number().optional().nullable(),
+  options_trading_level: z.number().optional().nullable(),
 });
 export type AlpacaApiTradeAccountSchema = z.infer<
   typeof AlpacaApiTradeAccountSchema
 >;
 
 type Order = {
-  id: string;
-  client_order_id: string;
-  created_at: Date;
-  updated_at: Date;
-  submitted_at: Date;
-  filled_at?: Date;
-  expired_at?: Date;
-  canceled_at?: Date;
-  failed_at?: Date;
-  replaced_at?: Date;
-  replaced_by?: string;
-  replaces?: string;
-  asset_id: string;
-  symbol: string;
-  asset_class: z.infer<typeof AssetClassSchema>;
-  notional?: string;
-  qty?: string | number;
-  filled_qty?: string | number;
-  filled_avg_price?: string | number;
-  order_class: z.infer<typeof OrderClassSchema>;
-  order_type: z.infer<typeof OrderTypeSchema>;
-  type: z.infer<typeof OrderTypeSchema>;
-  side: z.infer<typeof OrderSideSchema>;
-  time_in_force: z.infer<typeof TimeInForceSchema>;
-  limit_price?: string | number;
-  stop_price?: string | number;
-  status: z.infer<typeof OrderStatusSchema>;
-  extended_hours: boolean;
-  legs?: Order[];
-  trail_percent?: string;
-  trail_price?: string;
-  hwm?: string;
+  id?: string | null;
+  client_order_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  submitted_at?: string | null;
+  filled_at?: string | null;
+  expired_at?: string | null;
+  canceled_at?: string | null;
+  failed_at?: string | null;
+  replaced_at?: string | null;
+  replaced_by?: string | null;
+  replaces?: string | null;
+  asset_id?: string | null;
+  symbol?: string | null;
+  asset_class?: z.infer<typeof AssetClassSchema> | null | "";
+  notional?: string | null;
+  qty?: string | number | null;
+  filled_qty?: string | number | null;
+  filled_avg_price?: string | number | null;
+  order_class?: z.infer<typeof OrderClassSchema> | null | "";
+  order_type?: z.infer<typeof OrderTypeSchema> | null | "";
+  type?: z.infer<typeof OrderTypeSchema> | null | "";
+  side?: z.infer<typeof OrderSideSchema> | null | "";
+  time_in_force?: z.infer<typeof TimeInForceSchema> | null | "";
+  limit_price?: string | number | null;
+  stop_price?: string | number | null;
+  status?: z.infer<typeof OrderStatusSchema> | null | "";
+  extended_hours?: boolean | null;
+  legs?: Order[] | null;
+  trail_percent?: string | null;
+  trail_price?: string | null;
+  hwm?: string | null;
 };
 
 const OrderSchema: z.ZodType<Order> = z.lazy(() =>
   z.object({
-    id: z.string().uuid(),
-    client_order_id: z.string(),
-    created_at: z.date(),
-    updated_at: z.date(),
-    submitted_at: z.date(),
-    filled_at: z.date().optional(),
-    expired_at: z.date().optional(),
-    canceled_at: z.date().optional(),
-    failed_at: z.date().optional(),
-    replaced_at: z.date().optional(),
-    replaced_by: z.string().uuid().optional(),
-    replaces: z.string().uuid().optional(),
-    asset_id: z.string().uuid(),
-    symbol: z.string(),
-    asset_class: AssetClassSchema,
-    notional: z.string().optional(),
-    qty: z.union([z.string(), z.number()]).optional(),
-    filled_qty: z.union([z.string(), z.number()]).optional(),
-    filled_avg_price: z.union([z.string(), z.number()]).optional(),
-    order_class: OrderClassSchema,
-    order_type: OrderTypeSchema,
-    type: OrderTypeSchema,
-    side: OrderSideSchema,
-    time_in_force: TimeInForceSchema,
-    limit_price: z.union([z.string(), z.number()]).optional(),
-    stop_price: z.union([z.string(), z.number()]).optional(),
-    status: OrderStatusSchema,
-    extended_hours: z.boolean(),
-    legs: z.array(z.lazy(() => OrderSchema)).optional(),
-    trail_percent: z.string().optional(),
-    trail_price: z.string().optional(),
-    hwm: z.string().optional(),
+    id: z.string().uuid().optional().nullable(),
+    client_order_id: z.string().optional().nullable(),
+    created_at: z.string().optional().nullable(),
+    updated_at: z.string().optional().nullable(),
+    submitted_at: z.string().optional().nullable(),
+    filled_at: z.string().optional().nullable(),
+    expired_at: z.string().optional().nullable(),
+    canceled_at: z.string().optional().nullable(),
+    failed_at: z.string().optional().nullable(),
+    replaced_at: z.string().optional().nullable(),
+    replaced_by: z.string().uuid().optional().nullable(),
+    replaces: z.string().uuid().optional().nullable(),
+    asset_id: z.string().uuid().optional().nullable(),
+    symbol: z.string().optional().nullable(),
+    asset_class: AssetClassSchema.optional().nullable().or(z.literal("")),
+    notional: z.string().optional().nullable(),
+    qty: z.union([z.string(), z.number()]).optional().nullable(),
+    filled_qty: z.union([z.string(), z.number()]).optional().nullable(),
+    filled_avg_price: z.union([z.string(), z.number()]).optional().nullable(),
+    order_class: OrderClassSchema.optional().nullable().or(z.literal("")),
+    order_type: OrderTypeSchema.optional().nullable().or(z.literal("")),
+    type: OrderTypeSchema.optional().nullable().or(z.literal("")),
+    side: OrderSideSchema.optional().nullable().or(z.literal("")),
+    time_in_force: TimeInForceSchema.optional().nullable().or(z.literal("")),
+    limit_price: z.union([z.string(), z.number()]).optional().nullable(),
+    stop_price: z.union([z.string(), z.number()]).optional().nullable(),
+    status: OrderStatusSchema.optional().nullable().or(z.literal("")),
+    extended_hours: z.boolean().optional().nullable(),
+    legs: z
+      .array(z.lazy(() => OrderSchema))
+      .optional()
+      .nullable(),
+    trail_percent: z.string().optional().nullable(),
+    trail_price: z.string().optional().nullable(),
+    hwm: z.string().optional().nullable(),
   }),
 );
+
 export { OrderSchema };
 export const OrdersSchema = z.array(OrderSchema);
 
 export const OrderRequestSchema = z.object({
-  symbol: z.string(),
-  qty: z.number().optional(),
-  notional: z.number().optional(),
-  side: OrderSideSchema,
-  type: OrderTypeSchema,
-  time_in_force: TimeInForceSchema,
-  limit_price: z.number().optional(),
-  stop_price: z.number().optional(),
-  client_order_id: z.string().optional(),
-  extended_hours: z.boolean().optional(),
-  order_class: z.string().optional(),
-  take_profit: z.record(z.unknown()).optional(),
-  stop_loss: z.record(z.unknown()).optional(),
-  trail_price: z.string().optional(),
-  trail_percent: z.string().optional(),
+  symbol: z.string().nullable(),
+  qty: z.number().optional().nullable(),
+  notional: z.number().optional().nullable(),
+  side: OrderSideSchema.optional().or(z.literal("")).nullable(),
+  type: OrderTypeSchema.optional().or(z.literal("")).nullable(),
+  time_in_force: TimeInForceSchema.optional().or(z.literal("")).nullable(),
+  limit_price: z.number().optional().nullable(),
+  stop_price: z.number().optional().nullable(),
+  client_order_id: z.string().optional().nullable(),
+  extended_hours: z.boolean().optional().nullable(),
+  order_class: z.string().optional().nullable(),
+  take_profit: z.record(z.unknown()).optional().nullable(),
+  stop_loss: z.record(z.unknown()).optional().nullable(),
+  trail_price: z.string().optional().nullable(),
+  trail_percent: z.string().optional().nullable(),
 });
 export type OrderRequest = z.infer<typeof OrderRequestSchema>;
 
 export const AssetSchema = z.object({
-  id: z.string().uuid(),
-  asset_class: AssetClassSchema,
-  exchange: AssetExchangeSchema,
-  symbol: z.string(),
-  name: z.string().optional(),
-  status: AssetStatusSchema,
-  tradable: z.boolean(),
-  marginable: z.boolean(),
-  shortable: z.boolean(),
-  easy_to_borrow: z.boolean(),
+  id: z.string().uuid().nullable(),
+  asset_class: AssetClassSchema.optional().or(z.literal("")).nullable(),
+  exchange: AssetExchangeSchema.optional().or(z.literal("")).nullable(),
+  symbol: z.string().nullable(),
+  name: z.string().optional().nullable(),
+  status: AssetStatusSchema.optional().nullable(),
+  tradable: z.boolean().nullable(),
+  marginable: z.boolean().nullable(),
+  shortable: z.boolean().nullable(),
+  easy_to_borrow: z.boolean().nullable(),
   fractionable: z.boolean(),
-  min_order_size: z.number().optional(),
-  min_trade_increment: z.number().optional(),
-  price_increment: z.number().optional(),
-  maintenance_margin_requirement: z.number().optional(),
-  attributes: z.array(z.string()).optional(),
+  min_order_size: z.number().optional().nullable(),
+  min_trade_increment: z.number().optional().nullable(),
+  price_increment: z.number().optional().nullable(),
+  maintenance_margin_requirement: z.number().optional().nullable(),
+  attributes: z.array(z.string()).optional().nullable(),
 });
 
 export const AlpacaCalendarSchema = z.object({
-  date: z.string(),
-  open: z.string(),
-  close: z.string(),
+  date: z.string().optional().nullable(),
+  open: z.string().optional().nullable(),
+  close: z.string().optional().nullable(),
   session_open: z.string(),
   session_close: z.string(),
-  settlement_date: z.string(),
+  settlement_date: z.string().optional().nullable(),
 });
 export type AlpacaCalendar = z.infer<typeof AlpacaCalendarSchema>;
