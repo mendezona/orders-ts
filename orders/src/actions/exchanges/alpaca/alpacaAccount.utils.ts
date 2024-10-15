@@ -56,11 +56,13 @@ export const alpacaGetCredentials = (
  * Retrieves the account balance.
  *
  * @param accountName - The name of the account to trade with.
+ * @param investTaxableIncome - Flag to decide if taxable income should be reinvested in next trade
  *
  * @returns An object containing account details, equity, and cash.
  */
 export const alpacaGetAccountBalance = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+  investTaxableIncome = true,
 ): Promise<AlpacaGetAccountBalance> => {
   const credentials = alpacaGetCredentials(accountName);
 
@@ -78,12 +80,12 @@ export const alpacaGetAccountBalance = async (
     const runningTotalOfTaxableProfits: Decimal = new Decimal(
       currentProfitAmount,
     );
-    const equity: Decimal = new Decimal(account.equity!).minus(
-      runningTotalOfTaxableProfits,
-    );
-    const cash: Decimal = new Decimal(account.cash!).minus(
-      runningTotalOfTaxableProfits,
-    );
+    const equity: Decimal = investTaxableIncome
+      ? new Decimal(account.equity!)
+      : new Decimal(account.equity!).minus(runningTotalOfTaxableProfits);
+    const cash: Decimal = investTaxableIncome
+      ? new Decimal(account.cash!)
+      : new Decimal(account.cash!).minus(runningTotalOfTaxableProfits);
 
     console.log("Available equity minus taxable profits:", equity);
     console.log("Available cash minus taxable profits:", cash);
