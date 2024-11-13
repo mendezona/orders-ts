@@ -21,7 +21,11 @@ export async function POST(request: Request) {
     const json = await request.json();
     tradingViewAlert = tradingViewAlertSchema.parse(json);
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      extra: {
+        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      },
+    });
     if (error instanceof z.ZodError) {
       console.error("Validation error:", error.errors);
       return new Response(
@@ -66,7 +70,12 @@ export async function POST(request: Request) {
       },
     );
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      extra: {
+        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        tradingViewAlert,
+      },
+    });
     console.error(
       "Endpoint error - alpaca/pairtradebuyalert, error processing trade order:",
       error,

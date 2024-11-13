@@ -6,7 +6,6 @@ import utc from "dayjs/plugin/utc";
 import Decimal from "decimal.js";
 import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
 import { getLatestFlipAlertForSymbol } from "~/server/queries";
-import { type FlipAlertItem } from "~/server/queries.types";
 import {
   type AlpacaCheckLatestPriceAndReverseTradeCronJobParams,
   type AlpacaSchedulePriceCheckAtNextInternalCronJobParams,
@@ -96,46 +95,56 @@ export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
   buyAlert,
 }: AlpacaCheckLatestPriceAndReverseTradeCronJobParams): Promise<void> => {
   console.log(
-    `Cron job start - alpacaCheckLatestPriceAndReverseTradeCronJob - Scheduling price check and potential reverse trade for: ${tradingViewSymbol}.`,
+    `Cron job start - alpacaCheckLatestPriceAndReverseTradeCronJob - Scheduling price check for: ${tradingViewSymbol}`,
   );
 
-  const latestFlipAlert: FlipAlertItem =
-    await getLatestFlipAlertForSymbol(tradingViewSymbol);
-  const lastTradePrice: Decimal = new Decimal(latestFlipAlert.price);
-  const getQuote = await alpacaGetLatestQuote(tradingViewSymbol);
-  const quotePrice: Decimal = getQuote.askPrice.gt(0)
-    ? getQuote.askPrice
-    : getQuote.bidPrice;
+  try {
+    const [latestFlipAlert, getQuote] = await Promise.all([
+      getLatestFlipAlertForSymbol(tradingViewSymbol),
+      alpacaGetLatestQuote(tradingViewSymbol),
+    ]);
 
-  console.log(
-    `${tradingViewSymbol}, buy alert: ${buyAlert}, last trade price: ${lastTradePrice.toString()}, quote price: ${quotePrice.toString()}`,
-  );
+    const lastTradePrice = new Decimal(latestFlipAlert.price);
+    const quotePrice = getQuote.askPrice.gt(0)
+      ? getQuote.askPrice
+      : getQuote.bidPrice;
 
-  if (
-    (buyAlert && lastTradePrice.greaterThan(quotePrice)) ||
-    (!buyAlert && lastTradePrice.lessThan(quotePrice))
-  ) {
-    console.log("Cron job - reverse trade initiated");
-    try {
-      await alpacaSubmitPairTradeOrder({
-        tradingViewSymbol: tradingViewSymbol,
-        tradingViewPrice: quotePrice.toString(),
-        buyAlert: !buyAlert,
-        scheduleCronJob: false,
-      } as AlpacaSubmitPairTradeOrderParams);
+    console.log(
+      `${tradingViewSymbol}, buy alert: ${buyAlert}, last trade price: ${lastTradePrice.toString()}, quote price: ${quotePrice.toString()}`,
+    );
 
-      console.log(
-        `Cron job end - alpacaCheckLatestPriceAndReverseTradeCronJob - successful for for: ${tradingViewSymbol}.`,
-      );
-    } catch (error) {
-      Sentry.captureException(error);
-      console.error(
-        "Cron job error - alpacaCheckLatestPriceAndReverseTradeCronJob - Failed to execute reverse trade",
-        error,
-      );
-      throw error;
+    const shouldReverseTrade = buyAlert
+      ? lastTradePrice.greaterThan(quotePrice)
+      : lastTradePrice.lessThan(quotePrice);
+
+    if (!shouldReverseTrade) {
+      console.log("Cron job end - no trades initiated");
+      return;
     }
-  } else {
-    console.log("Cron job end - no trades initiated");
+
+    console.log("Cron job - reverse trade initiated");
+    await alpacaSubmitPairTradeOrder({
+      tradingViewSymbol,
+      tradingViewPrice: quotePrice.toString(),
+      buyAlert: !buyAlert,
+      scheduleCronJob: false,
+    } as AlpacaSubmitPairTradeOrderParams);
+
+    console.log(
+      `Cron job end - alpacaCheckLatestPriceAndReverseTradeCronJob - successful for: ${tradingViewSymbol}`,
+    );
+  } catch (error) {
+    Sentry.captureException(error, {
+      extra: {
+        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        tradingViewSymbol,
+        buyAlert,
+      },
+    });
+    console.error(
+      "Cron job error - alpacaCheckLatestPriceAndReverseTradeCronJob - Failed to execute reverse trade",
+      error,
+    );
+    throw error;
   }
 };
