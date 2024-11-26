@@ -98,12 +98,15 @@ export const alpacaSubmitPairTradeOrder = async ({
   console.log("alpacaInverseSymbol", alpacaInverseSymbol);
 
   /**
-   *  If there is no sell order found for currentsymbol, sell all holdings and save CGT to database.
+   *  If there is no sell order found for current symbol, sell all holdings and save CGT to database.
    *
    * Assumes there is only one order open at a time for a given symbol
    **/
-  const openPositionOfInverseTrade =
-    await alpacaGetPositionForAsset(alpacaInverseSymbol);
+  const [openPositionOfInverseTrade] = await Promise.all([
+    alpacaGetPositionForAsset(alpacaInverseSymbol),
+    alpacaCancelAllOpenOrders(accountName),
+  ]);
+
   if (
     openPositionOfInverseTrade.openPositionFound &&
     openPositionOfInverseTrade.qty
@@ -115,6 +118,7 @@ export const alpacaSubmitPairTradeOrder = async ({
         quantity: assetBalance,
         buySideOrder: false,
         setSlippagePercentage: new Decimal("0.01"),
+        submitTakeProfitOrder: false,
       } as AlpacaSubmitLimitOrderCustomQuantityParams);
     } else {
       await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
@@ -180,6 +184,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       Sentry.captureMessage(errorMessage);
       throw new Error(errorMessage);
     }
+
     await alpacaSchedulePriceCheckAtNextIntervalCronJob({
       tradingViewSymbol,
       tradingViewPrice,
@@ -210,6 +215,8 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   orderType = OrderTypeSchema.Enum.limit,
   timeInForce = TimeInForceSchema.Enum.day,
   setSlippagePercentage = new Decimal(0),
+  submitTakeProfitOrder = true,
+  takeProfitPercentage = new Decimal(1.05),
 }: AlpacaSubmitLimitOrderCustomQuantityParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
 
@@ -285,6 +292,47 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     const orderResponse = await alpaca.createOrder(orderRequest);
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
+
+    if (submitTakeProfitOrder) {
+      const takeProfitPrice: Decimal = limitPrice
+        .times(takeProfitPercentage)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const reverseOrderSide: OrderSide = !buySideOrder
+        ? OrderSideSchema.enum.buy
+        : OrderSideSchema.Enum.sell;
+
+      if (fractionable) {
+        orderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(quantity).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: true,
+        };
+      } else {
+        orderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(quantity)
+            .toDecimalPlaces(0, Decimal.ROUND_DOWN)
+            .toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: true,
+        };
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const orderResponse = await alpaca.createOrder(orderRequest);
+      console.log(
+        `Take Profit Limit ${orderSide} order submitted: \n`,
+        orderResponse,
+      );
+      console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
+    }
   } catch (error) {
     Sentry.captureException(error);
     console.error("Error - alpacaSubmitLimitOrderCustomQuantity:", error);
@@ -313,6 +361,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   timeInForce = TimeInForceSchema.Enum.day,
   limitPrice,
   setSlippagePercentage = new Decimal(0),
+  submitTakeProfitOrder = true,
+  takeProfitPercentage = new Decimal(1.05),
 }: AlpacaSubmitLimitOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
 
@@ -416,6 +466,55 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     const orderResponse = await alpaca.createOrder(orderRequest);
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomPercentage");
+
+    if (submitTakeProfitOrder) {
+      const currentPosition = await alpacaGetPositionForAsset(alpacaSymbol);
+
+      if (!currentPosition.qty) {
+        const errorMessage =
+          "Error - No open position found to create take profit order";
+        console.log(errorMessage);
+        Sentry.captureMessage(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const takeProfitPrice: Decimal = limitPrice
+        .times(takeProfitPercentage)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const reverseOrderSide: OrderSide = !buySideOrder
+        ? OrderSideSchema.enum.buy
+        : OrderSideSchema.Enum.sell;
+
+      if (fractionable) {
+        orderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(currentPosition.qty).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: true,
+        };
+      } else {
+        orderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(currentPosition.qty).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: true,
+        };
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const orderResponse = await alpaca.createOrder(orderRequest);
+      console.log(
+        `Take Profit Limit ${orderSide} order submitted: \n`,
+        orderResponse,
+      );
+      console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
+    }
   } catch (error) {
     Sentry.captureException(error);
     console.error("Error - alpacaSubmitLimitOrderCustomPercentage:", error);
@@ -557,6 +656,39 @@ export const alpacaCloseAllHoldingsOfAsset = async (
   } catch (error) {
     Sentry.captureException(error);
     console.error("Error - alpacaCloseAllHoldingsOfAsset:", error);
+    throw error;
+  }
+};
+
+/**
+ * Cancels all open orders for the specified Alpaca account.
+ *
+ * @param accountName - The Alpaca account to use for the operation. Defaults to live trading account.
+ * @returns Promise that resolves when all orders are cancelled
+ */
+export const alpacaCancelAllOpenOrders = async (
+  accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+): Promise<void> => {
+  const credentials = alpacaGetCredentials(accountName);
+  console.log("Alpaca Order Begin - alpacaCancelAllOpenOrders");
+
+  try {
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
+    await alpaca.cancelAllOrders();
+    console.log("Successfully cancelled all open orders");
+  } catch (error) {
+    Sentry.captureException(error, {
+      extra: {
+        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        accountName,
+      },
+    });
+    console.error("Failed to cancel all open orders:", error);
     throw error;
   }
 };

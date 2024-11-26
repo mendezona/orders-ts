@@ -13,7 +13,10 @@ import {
 } from "./alpaca.types";
 import { alpacaGetNextIntervalTime } from "./alpacaCronJob.helpers";
 import { alpacaGetLatestQuote } from "./alpacaOrders.helpers";
-import { alpacaSubmitPairTradeOrder } from "./alpacaOrders.utils";
+import {
+  alpacaCancelAllOpenOrders,
+  alpacaSubmitPairTradeOrder,
+} from "./alpacaOrders.utils";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -123,6 +126,7 @@ export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
     }
 
     console.log("Cron job - reverse trade initiated");
+    await alpacaCancelAllOpenOrders();
     await alpacaSubmitPairTradeOrder({
       tradingViewSymbol,
       tradingViewPrice: quotePrice.toString(),

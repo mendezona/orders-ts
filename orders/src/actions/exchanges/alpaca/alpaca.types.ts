@@ -57,6 +57,8 @@ export interface AlpacaSubmitLimitOrderCustomQuantityParams
   quantity: Decimal;
   setSlippagePercentage: Decimal;
   limitPrice?: Decimal;
+  submitTakeProfitOrder?: boolean;
+  takeProfitPercentage?: Decimal;
 }
 
 export interface AlpacaSubmitLimitOrderCustomPercentageParams
@@ -64,6 +66,8 @@ export interface AlpacaSubmitLimitOrderCustomPercentageParams
   setSlippagePercentage: Decimal;
   capitalPercentageToDeploy: Decimal;
   limitPrice?: Decimal;
+  submitTakeProfitOrder?: boolean;
+  takeProfitPercentage?: Decimal;
 }
 
 export interface AlpacaSubmitMarketOrderCustomPercentageParams
