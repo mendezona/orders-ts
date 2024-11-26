@@ -2,6 +2,7 @@ import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import { Client } from "@upstash/qstash";
 import dayjs, { type Dayjs } from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
@@ -10,6 +11,7 @@ import { type AlpacaCalendar } from "./alpacaApi.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 
 /**
  * Finds the next interval time for a cron job for extended hours trading.
@@ -87,19 +89,13 @@ export const alpacaGetNextIntervalTime = async (
     }
   }
 
-  // If all times have passed today, schedule for the first interval of the next trading day at 4:15 AM
-  const nextTradingDay = await alpacaGetNextAvailableTradingDay(now);
-  const nextTime = nextTradingDay
-    .set("hour", 4)
-    .set("minute", 15)
-    .set("second", 0)
-    .set("millisecond", 0);
+  // If all times have passed today, schedule for the first interval of the next trading day at session open
+  const { nextSessionOpen } = await alpacaGetNextAvailableTradingDay(now);
 
   console.log(
-    "All times have passed today, scheduling for 4:15 AM on the next trading day on",
-    nextTime.toString(),
+    `No more trading intervals available today. Scheduling for tomorrow's market open at: ${nextSessionOpen.format("YYYY-MM-DD HH:mm:ss")}`,
   );
-  return nextTime;
+  return nextSessionOpen;
 };
 
 /**
@@ -109,9 +105,7 @@ export const alpacaGetNextIntervalTime = async (
  *
  * @returns A Dayjs object representing the next available trading day.
  */
-export const alpacaGetNextAvailableTradingDay = async (
-  date: Dayjs,
-): Promise<Dayjs> => {
+export const alpacaGetNextAvailableTradingDay = async (date: Dayjs) => {
   const credentials = alpacaGetCredentials();
 
   const alpaca: Alpaca = new Alpaca({
@@ -120,17 +114,25 @@ export const alpacaGetNextAvailableTradingDay = async (
     paper: credentials.paper,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const calendar = (await alpaca.getCalendar({
     start: date.format("YYYY-MM-DDTHH:mm:ss[Z]"),
     end: date.add(7, "day").format("YYYY-MM-DDTHH:mm:ss[Z]"),
   })) as AlpacaCalendar[];
 
   for (const day of calendar) {
-    const tradingDay = dayjs(day.date).tz("America/New_York");
-    if (tradingDay.isAfter(date, "day")) {
-      console.log("Found next available trading day:", tradingDay);
-      return tradingDay;
+    const nextTradingDay = dayjs(day.date);
+
+    if (nextTradingDay.isAfter(date, "day")) {
+      const nextSessionOpen = dayjs(
+        `${day.date} ${day.session_open}`,
+        "YYYY-MM-DD HHmm",
+      );
+
+      console.log(
+        "Found next available trading day:",
+        nextTradingDay.format("DD-MM-YYYY"),
+      );
+      return { nextTradingDay, nextSessionOpen };
     }
   }
 
@@ -147,18 +149,24 @@ export const alpacaGetNextAvailableTradingDay = async (
 export const scheduleFractionableTakeProfitOrderCronJob =
   async (): Promise<void> => {
     const now = dayjs().tz("America/New_York");
-    const nextTradingDay = await alpacaGetNextAvailableTradingDay(now);
+    const { nextSessionOpen } = await alpacaGetNextAvailableTradingDay(now);
 
-    // Get UTC hour for 3 AM NY time
-    const nyOffset = now.utcOffset() / 60; // Convert minutes to hours
-    const utcHour = (3 - nyOffset + 24) % 24; // Convert 3 AM NY to UTC, ensure positive hour
-    const cronDate = nextTradingDay.format("DD MM *");
-    const cronExpression = `0 ${utcHour} ${cronDate}`; // Run at 3:00 AM NY time (in UTC)
+    // Convert nextSessionOpen to UTC
+    const utcDateTime = nextSessionOpen.utc();
+
+    // Extract minute, hour, day, and month for the cron expression
+    const minute = utcDateTime.minute();
+    const hour = utcDateTime.hour();
+    const dayOfMonth = utcDateTime.date();
+    const month = utcDateTime.month() + 1; // month() returns 0-11, cron uses 1-12
+
+    // Build the cron expression
+    const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
 
     console.log(
-      `Scheduling fractionable take profit order for ${nextTradingDay
-        .hour(3)
-        .format("YYYY-MM-DD HH:mm:ss z")} NY time`,
+      `Scheduling fractionable take profit order for ${nextSessionOpen.format(
+        "YYYY-MM-DD HH:mm:ss z",
+      )} NY time, which is ${utcDateTime.format("YYYY-MM-DD HH:mm:ss [UTC]")} UTC`,
     );
 
     const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
