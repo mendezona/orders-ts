@@ -172,6 +172,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       alpacaSymbol: alpacaSymbol,
       capitalPercentageToDeploy,
       accountName,
+      tradingViewPrice,
     } as AlpacaSubmitMarketOrderCustomPercentageParams);
   }
 
@@ -576,11 +577,14 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
  */
 export const alpacaSubmitMarketOrderCustomPercentage = async ({
   alpacaSymbol,
+  tradingViewPrice,
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   orderType = OrderTypeSchema.Enum.market,
   timeInForce = TimeInForceSchema.Enum.day,
+  submitTakeProfitOrder = true,
+  takeProfitPercentage = new Decimal(1.05),
 }: AlpacaSubmitMarketOrderCustomPercentageParams): Promise<void> => {
   const credentials = alpacaGetCredentials(accountName);
 
@@ -656,6 +660,74 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const orderResponse = await alpaca.createOrder(orderRequest);
     console.log(`Market ${orderSide} order submitted: \n`, orderResponse);
+
+    if (submitTakeProfitOrder) {
+      await wait(10000);
+      const currentPosition = await alpacaGetPositionForAsset(
+        alpacaSymbol,
+        accountName,
+        5,
+      );
+
+      if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
+        const errorMessage =
+          "Error - No open position found to create take profit order";
+        console.log(errorMessage);
+        Sentry.captureMessage(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      let takeProfitOrderRequest: OrderRequest;
+      const takeProfitPrice: Decimal = new Decimal(tradingViewPrice)
+        .times(takeProfitPercentage)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const reverseOrderSide: OrderSide = !buySideOrder
+        ? OrderSideSchema.enum.buy
+        : OrderSideSchema.Enum.sell;
+
+      if (fractionable) {
+        takeProfitOrderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(currentPosition.qty).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.day,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: false,
+        };
+      } else {
+        takeProfitOrderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(currentPosition.qty).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: false,
+        };
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
+      console.log(
+        `Take Profit Limit ${orderSide} order submitted: \n`,
+        orderResponse,
+      );
+
+      if (fractionable) {
+        // Save to database for processing at 3 AM next trading day
+        await Promise.all([
+          saveFractionableTakeProfitOrder({
+            symbol: alpacaSymbol,
+            quantity: currentPosition.qty.toString(),
+            limitPrice: takeProfitPrice.toString(),
+            side: reverseOrderSide,
+          }),
+          scheduleFractionableTakeProfitOrderCronJob(),
+        ]);
+      }
+    }
+
     console.log("Alpaca Order End - alpacaSubmitMarketOrderCustomPercentage");
   } catch (error) {
     Sentry.captureException(error);

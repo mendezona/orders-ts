@@ -72,7 +72,10 @@ export interface AlpacaSubmitLimitOrderCustomPercentageParams
 
 export interface AlpacaSubmitMarketOrderCustomPercentageParams
   extends AlpacaOrderRequestParams {
+  tradingViewPrice: string;
   capitalPercentageToDeploy: Decimal;
+  submitTakeProfitOrder?: boolean;
+  takeProfitPercentage?: Decimal;
 }
 
 export interface AlpacaCheckLatestPriceAndReverseTradeCronJobParams {
