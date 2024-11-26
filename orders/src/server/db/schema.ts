@@ -43,3 +43,17 @@ export const sellTrades = createTable("sellTrades", {
     .notNull(),
   manuallyAdded: boolean("manually_added").default(false),
 });
+
+export const fractionableTakeProfitOrders = createTable(
+  "fractionableTakeProfitOrders",
+  {
+    id: serial("id").primaryKey(),
+    symbol: text("symbol").notNull(),
+    quantity: numeric("quantity", { precision: 20, scale: 10 }).notNull(),
+    limitPrice: numeric("limit_price", { precision: 20, scale: 10 }).notNull(),
+    side: text("side").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+);

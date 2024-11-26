@@ -4,13 +4,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
-import { and, desc, eq, gt, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, lte } from "drizzle-orm";
 import { db } from "./db";
-import { flipAlerts, sellTrades } from "./db/schema";
+import {
+  flipAlerts,
+  fractionableTakeProfitOrders,
+  sellTrades,
+} from "./db/schema";
 import { getFinancialYearDates } from "./queries.helpers";
 import {
   type FlipAlertItem,
+  type FractionableTakeProfitOrder,
   type SaveBuyTradeToDatabaseFlipTradeAlertTableProps,
+  type SaveFractionableTakeProfitOrderProps,
   type SaveSellTradeToDatabaseSellTableProps,
 } from "./queries.types";
 
@@ -104,3 +110,26 @@ export const getLatestFlipAlertForSymbol = async (
     throw error;
   }
 };
+
+export const saveFractionableTakeProfitOrder = async (
+  order: SaveFractionableTakeProfitOrderProps,
+): Promise<void> => {
+  await db.insert(fractionableTakeProfitOrders).values(order);
+};
+
+export const getFirstFractionableTakeProfitOrder =
+  async (): Promise<FractionableTakeProfitOrder | null> => {
+    const orders = await db
+      .select()
+      .from(fractionableTakeProfitOrders)
+      .orderBy(asc(fractionableTakeProfitOrders.createdAt))
+      .limit(1);
+
+    return orders[0] ?? null;
+  };
+
+export const deleteAllFractionableTakeProfitOrders =
+  async (): Promise<void> => {
+    // eslint-disable-next-line drizzle/enforce-delete-with-where
+    await db.delete(fractionableTakeProfitOrders);
+  };

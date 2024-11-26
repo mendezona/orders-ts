@@ -4,6 +4,7 @@ import Decimal from "decimal.js";
 import { ZodError } from "zod";
 import { getLatestTaxAmountCurrentFinancialYear } from "~/server/queries";
 import { DEVELOPMENT_MODE } from "../../actions.constants";
+import { wait } from "../exchanges.utils";
 import {
   ALPACA_ACCOUNTS,
   ALPACA_LIVE_TRADING_ACCOUNT_NAME,
@@ -114,12 +115,14 @@ export const alpacaGetAccountBalance = async (
  *
  * @param symbol - The symbol to search for the available asset balance.
  * @param accountName - The name of the account to search with.
+ * @param retries - The number of retries to attempt if the position is not found.
  *
  * @returns A Decimal with the number of available assets.
  */
 export const alpacaGetPositionForAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+  retries = 0,
 ): Promise<AlpacaGetPositionForAsset> => {
   const credentials = alpacaGetCredentials(accountName);
 
@@ -129,44 +132,64 @@ export const alpacaGetPositionForAsset = async (
     paper: credentials.paper,
   });
 
-  try {
-    const alpacaGetPosition: unknown = await alpaca.getPosition(symbol);
-    const position = AlpacaApiGetPositionSchema.parse(alpacaGetPosition);
+  let attempt = 0;
+  while (attempt <= retries) {
+    try {
+      const alpacaGetPosition: unknown = await alpaca.getPosition(symbol);
+      const position = AlpacaApiGetPositionSchema.parse(alpacaGetPosition);
 
-    if (!position.qty || !position.market_value) {
-      console.log("alpacaGetPositionForAsset - Position details not found");
+      if (!position.qty || !position.market_value) {
+        console.log("alpacaGetPositionForAsset - Position details not found");
+        if (attempt < retries) {
+          attempt++;
+          await wait(5000);
+          continue;
+        }
+        return { openPositionFound: false };
+      }
+
+      console.log(`Position for ${symbol}:`, position);
+      console.log(`Quantity of ${symbol}:`, position.qty);
+      console.log(`Market value for ${symbol}:`, position.market_value);
+      console.log("alpacaGetPositionForAsset - Position details found");
+
       return {
-        openPositionFound: false,
+        openPositionFound: true,
+        position,
+        qty: new Decimal(position.qty),
+        market_value: new Decimal(position.market_value),
       };
+    } catch (error) {
+      if (attempt < retries) {
+        console.log(`Retry ${attempt + 1} failed, retrying in 5 seconds...`);
+        attempt++;
+        await wait(5000);
+        continue;
+      }
+
+      Sentry.captureException(error);
+      if (error instanceof ZodError) {
+        console.error(
+          "alpacaGetPositionForAsset - validation failed with ZodError:",
+          error.errors,
+        );
+      } else if (
+        // @ts-expect-error error is always AxiosError in this context
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        error.response?.status === 404 &&
+        // @ts-expect-error error is always AxiosError in this context
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        error.response?.data?.code === 40410000
+      ) {
+        console.log("Position not found, handling gracefully");
+      } else {
+        console.error(
+          "alpacaGetPositionForAsset - Error fetching position details:",
+          error,
+        );
+      }
+      return { openPositionFound: false };
     }
-
-    console.log(`Position for ${symbol}:`, position);
-    console.log(`Quantity of ${symbol}:`, position.qty);
-    console.log(`Market value for ${symbol}:`, position.market_value);
-    console.log("alpacaGetPositionForAsset - Position details found");
-
-    return {
-      openPositionFound: true,
-      position,
-      qty: new Decimal(position.qty),
-      market_value: new Decimal(position.market_value),
-    };
-  } catch (error) {
-    Sentry.captureException(error);
-    if (error instanceof ZodError) {
-      console.error(
-        "alpacaGetPositionForAsset - validation failed with ZodError:",
-        error.errors,
-      );
-    } else {
-      console.error(
-        "alpacaGetPositionForAsset - Error fetching position details:",
-        error,
-      );
-    }
-
-    return {
-      openPositionFound: false,
-    };
   }
+  return { openPositionFound: false };
 };

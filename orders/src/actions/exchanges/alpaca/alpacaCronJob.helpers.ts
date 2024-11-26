@@ -1,8 +1,10 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
+import { Client } from "@upstash/qstash";
 import dayjs, { type Dayjs } from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import { type AlpacaCalendar } from "./alpacaApi.types";
 
@@ -138,3 +140,30 @@ export const alpacaGetNextAvailableTradingDay = async (
   Sentry.captureMessage(errorMessage);
   throw new Error(errorMessage);
 };
+
+/**
+ * Schedules a cron job to submit a fractionable take profit order at 3 AM NY time. Fractionable orders only allow time in force of day therefore this cron job is scheduled every trading day.
+ */
+export const scheduleFractionableTakeProfitOrderCronJob =
+  async (): Promise<void> => {
+    const now = dayjs().tz("America/New_York");
+    const nextTradingDay = await alpacaGetNextAvailableTradingDay(now);
+
+    // Get UTC hour for 3 AM NY time
+    const nyOffset = now.utcOffset() / 60; // Convert minutes to hours
+    const utcHour = (3 - nyOffset + 24) % 24; // Convert 3 AM NY to UTC, ensure positive hour
+    const cronDate = nextTradingDay.format("DD MM *");
+    const cronExpression = `0 ${utcHour} ${cronDate}`; // Run at 3:00 AM NY time (in UTC)
+
+    console.log(
+      `Scheduling fractionable take profit order for ${nextTradingDay
+        .hour(3)
+        .format("YYYY-MM-DD HH:mm:ss z")} NY time`,
+    );
+
+    const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
+    await client.schedules.create({
+      destination: `${ORDER_TS_BASE_URL}/api/alpaca/submittakeprofitorderforfractionableassets`,
+      cron: cronExpression,
+    });
+  };
