@@ -2,13 +2,19 @@ import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "~/actions/exchanges/alpaca/alpaca.constants";
-import { alpacaGetCredentials } from "~/actions/exchanges/alpaca/alpacaAccount.utils";
+import {
+  alpacaGetCredentials,
+  alpacaGetPositionForAsset,
+} from "~/actions/exchanges/alpaca/alpacaAccount.utils";
 import {
   OrderTypeSchema,
   TimeInForceSchema,
 } from "~/actions/exchanges/alpaca/alpacaApi.types";
 import { scheduleFractionableTakeProfitOrderCronJob } from "~/actions/exchanges/alpaca/alpacaCronJob.helpers";
-import { getFirstFractionableTakeProfitOrder } from "~/server/queries";
+import {
+  deleteAllFractionableTakeProfitOrders,
+  getFirstFractionableTakeProfitOrder,
+} from "~/server/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +25,32 @@ export async function POST() {
 
   try {
     const order = await getFirstFractionableTakeProfitOrder();
+
     if (!order) {
       console.log("No fractionable take profit orders found");
       return new Response(JSON.stringify({ message: "No orders found" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    const currentPosition = await alpacaGetPositionForAsset(
+      order.symbol,
+      ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+      5,
+    );
+
+    if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
+      await deleteAllFractionableTakeProfitOrders();
+
+      console.log("No open position found to create take profit order");
+      return new Response(
+        JSON.stringify({ message: "No open position found" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     const takeProfitOrderRequest = {
