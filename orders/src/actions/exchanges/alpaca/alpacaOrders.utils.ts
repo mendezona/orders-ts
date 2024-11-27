@@ -658,7 +658,10 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
 
     console.log("orderRequest:", orderRequest);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const orderResponse = await alpaca.createOrder(orderRequest);
+    const [orderResponse, takeProfitQuote] = await Promise.all([
+      alpaca.createOrder(orderRequest),
+      alpacaGetLatestQuote(alpacaSymbol, accountName),
+    ]);
     console.log(`Market ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
@@ -678,7 +681,12 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
       }
 
       let takeProfitOrderRequest: OrderRequest;
-      const takeProfitPrice: Decimal = new Decimal(tradingViewPrice)
+      const principalPrice: Decimal = new Decimal(
+        buySideOrder
+          ? tradingViewPrice
+          : (takeProfitQuote.bidPrice ?? takeProfitQuote.askPrice),
+      );
+      const takeProfitPrice: Decimal = principalPrice
         .times(takeProfitPercentage)
         .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const reverseOrderSide: OrderSide = !buySideOrder
