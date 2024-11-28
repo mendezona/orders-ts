@@ -50,6 +50,7 @@ export interface AlpacaSubmitPairTradeOrderParams {
   calculateTax?: boolean;
   accountName?: string;
   scheduleCronJob?: boolean;
+  submitTakeProfitOrder?: boolean;
 }
 
 export interface AlpacaSubmitLimitOrderCustomQuantityParams

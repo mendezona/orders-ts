@@ -132,6 +132,7 @@ export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
       tradingViewPrice: quotePrice.toString(),
       buyAlert: !buyAlert,
       scheduleCronJob: false,
+      submitTakeProfitOrder: false,
     } as AlpacaSubmitPairTradeOrderParams);
 
     console.log(

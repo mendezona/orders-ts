@@ -76,6 +76,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   buyAlert = true,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   scheduleCronJob = true,
+  submitTakeProfitOrder = true,
 }: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
   console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
   logTimesInNewYorkAndLocalTimezone();
@@ -166,6 +167,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       capitalPercentageToDeploy,
       setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
       accountName,
+      submitTakeProfitOrder,
     } as AlpacaSubmitLimitOrderCustomPercentageParams);
   } else {
     await alpacaSubmitMarketOrderCustomPercentage({
@@ -173,6 +175,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       capitalPercentageToDeploy,
       accountName,
       tradingViewPrice,
+      submitTakeProfitOrder,
     } as AlpacaSubmitMarketOrderCustomPercentageParams);
   }
 
@@ -300,44 +303,12 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
 
     if (submitTakeProfitOrder) {
       await wait(10000);
-      let takeProfitOrderRequest: OrderRequest;
       const takeProfitPrice: Decimal = limitPrice
         .times(takeProfitPercentage)
         .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const reverseOrderSide: OrderSide = !buySideOrder
         ? OrderSideSchema.enum.buy
         : OrderSideSchema.Enum.sell;
-
-      if (fractionable) {
-        takeProfitOrderRequest = {
-          symbol: alpacaSymbol,
-          qty: new Decimal(quantity).toNumber(),
-          side: reverseOrderSide,
-          type: OrderTypeSchema.Enum.limit,
-          time_in_force: TimeInForceSchema.Enum.day,
-          limit_price: takeProfitPrice.toNumber(),
-          extended_hours: true,
-        };
-      } else {
-        takeProfitOrderRequest = {
-          symbol: alpacaSymbol,
-          qty: new Decimal(quantity)
-            .toDecimalPlaces(0, Decimal.ROUND_DOWN)
-            .toNumber(),
-          side: reverseOrderSide,
-          type: OrderTypeSchema.Enum.limit,
-          time_in_force: TimeInForceSchema.Enum.gtc,
-          limit_price: takeProfitPrice.toNumber(),
-          extended_hours: false,
-        };
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-      console.log(
-        `Take Profit Limit ${orderSide} order submitted: \n`,
-        orderResponse,
-      );
 
       if (fractionable) {
         // Save to database for processing at 3 AM next trading day
@@ -350,6 +321,28 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
           }),
           scheduleFractionableTakeProfitOrderCronJob(),
         ]);
+      } else {
+        const takeProfitOrderRequest: OrderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(quantity)
+            .toDecimalPlaces(0, Decimal.ROUND_DOWN)
+            .toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: false,
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const [orderResponse] = await Promise.all([
+          alpaca.createOrder(takeProfitOrderRequest),
+          deleteAllFractionableTakeProfitOrders(),
+        ]);
+        console.log(
+          `Take Profit Limit ${orderSide} order submitted: \n`,
+          orderResponse,
+        );
       }
 
       console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
@@ -504,42 +497,12 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
         throw new Error(errorMessage);
       }
 
-      let takeProfitOrderRequest: OrderRequest;
       const takeProfitPrice: Decimal = limitPrice
         .times(takeProfitPercentage)
         .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const reverseOrderSide: OrderSide = !buySideOrder
         ? OrderSideSchema.enum.buy
         : OrderSideSchema.Enum.sell;
-
-      if (fractionable) {
-        takeProfitOrderRequest = {
-          symbol: alpacaSymbol,
-          qty: new Decimal(currentPosition.qty).toNumber(),
-          side: reverseOrderSide,
-          type: OrderTypeSchema.Enum.limit,
-          time_in_force: TimeInForceSchema.Enum.day,
-          limit_price: takeProfitPrice.toNumber(),
-          extended_hours: false,
-        };
-      } else {
-        takeProfitOrderRequest = {
-          symbol: alpacaSymbol,
-          qty: new Decimal(currentPosition.qty).toNumber(),
-          side: reverseOrderSide,
-          type: OrderTypeSchema.Enum.limit,
-          time_in_force: TimeInForceSchema.Enum.gtc,
-          limit_price: takeProfitPrice.toNumber(),
-          extended_hours: false,
-        };
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-      console.log(
-        `Take Profit Limit ${orderSide} order submitted: \n`,
-        orderResponse,
-      );
 
       if (fractionable) {
         // Save to database for processing at 3 AM next trading day
@@ -552,6 +515,26 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
           }),
           scheduleFractionableTakeProfitOrderCronJob(),
         ]);
+      } else {
+        const takeProfitOrderRequest: OrderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(currentPosition.qty).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: false,
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const [orderResponse] = await Promise.all([
+          alpaca.createOrder(takeProfitOrderRequest),
+          deleteAllFractionableTakeProfitOrders(),
+        ]);
+        console.log(
+          `Take Profit Limit ${orderSide} order submitted: \n`,
+          orderResponse,
+        );
       }
 
       console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
@@ -680,7 +663,6 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
         throw new Error(errorMessage);
       }
 
-      let takeProfitOrderRequest: OrderRequest;
       const principalPrice: Decimal = new Decimal(
         buySideOrder
           ? tradingViewPrice
@@ -694,35 +676,6 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
         : OrderSideSchema.Enum.sell;
 
       if (fractionable) {
-        takeProfitOrderRequest = {
-          symbol: alpacaSymbol,
-          qty: new Decimal(currentPosition.qty).toNumber(),
-          side: reverseOrderSide,
-          type: OrderTypeSchema.Enum.limit,
-          time_in_force: TimeInForceSchema.Enum.day,
-          limit_price: takeProfitPrice.toNumber(),
-          extended_hours: false,
-        };
-      } else {
-        takeProfitOrderRequest = {
-          symbol: alpacaSymbol,
-          qty: new Decimal(currentPosition.qty).toNumber(),
-          side: reverseOrderSide,
-          type: OrderTypeSchema.Enum.limit,
-          time_in_force: TimeInForceSchema.Enum.gtc,
-          limit_price: takeProfitPrice.toNumber(),
-          extended_hours: false,
-        };
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-      console.log(
-        `Take Profit Limit ${orderSide} order submitted: \n`,
-        orderResponse,
-      );
-
-      if (fractionable) {
         // Save to database for processing at 3 AM next trading day
         await Promise.all([
           saveFractionableTakeProfitOrder({
@@ -733,6 +686,26 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
           }),
           scheduleFractionableTakeProfitOrderCronJob(),
         ]);
+      } else {
+        const takeProfitOrderRequest: OrderRequest = {
+          symbol: alpacaSymbol,
+          qty: new Decimal(currentPosition.qty).toNumber(),
+          side: reverseOrderSide,
+          type: OrderTypeSchema.Enum.limit,
+          time_in_force: TimeInForceSchema.Enum.gtc,
+          limit_price: takeProfitPrice.toNumber(),
+          extended_hours: false,
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const [orderResponse] = await Promise.all([
+          alpaca.createOrder(takeProfitOrderRequest),
+          deleteAllFractionableTakeProfitOrders(),
+        ]);
+        console.log(
+          `Take Profit Limit ${orderSide} order submitted: \n`,
+          orderResponse,
+        );
       }
     }
 
