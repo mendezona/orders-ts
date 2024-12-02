@@ -4,6 +4,7 @@ import Decimal from "decimal.js";
 import { VERCEL_MAXIMUM_SERVER_LIMIT } from "~/actions/actions.constants";
 import {
   deleteAllFractionableTakeProfitOrders,
+  getFirstFractionableTakeProfitOrder,
   saveBuyTradeToDatabaseFlipTradeAlertTable,
   saveFractionableTakeProfitOrder,
   saveSellTradeToDatabaseSellTable,
@@ -184,6 +185,10 @@ export const alpacaSubmitPairTradeOrder = async ({
     symbol: tradingViewSymbol,
     price: tradingViewPrice,
   } as SaveBuyTradeToDatabaseFlipTradeAlertTableProps);
+
+  if (submitTakeProfitOrder) {
+    await alpacaSubmitTakeProfitOrderForFractionableAssets();
+  }
 
   if (scheduleCronJob) {
     if (!tradingViewInterval) {
@@ -785,3 +790,87 @@ export const alpacaCancelAllOpenOrders = async (
     throw error;
   }
 };
+
+/**
+ * Submits a take profit order for the first fractionable asset found.
+ *
+ * @returns The take profit order.
+ */
+export const alpacaSubmitTakeProfitOrderForFractionableAssets =
+  async (): Promise<Response> => {
+    try {
+      const order = await getFirstFractionableTakeProfitOrder();
+
+      if (!order) {
+        console.log("No fractionable take profit orders found");
+        return new Response(JSON.stringify({ message: "No orders found" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const currentPosition = await alpacaGetPositionForAsset(
+        order.symbol,
+        ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+        5,
+      );
+
+      if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
+        await deleteAllFractionableTakeProfitOrders();
+
+        console.log("No open position found to create take profit order");
+        return new Response(
+          JSON.stringify({ message: "No open position found" }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      const takeProfitOrderRequest = {
+        symbol: order.symbol,
+        qty: new Decimal(order.quantity).toNumber(),
+        side: order.side,
+        type: OrderTypeSchema.Enum.limit,
+        time_in_force: TimeInForceSchema.Enum.day,
+        limit_price: new Decimal(order.limitPrice).toNumber(),
+        extended_hours: true,
+      };
+
+      const credentials = alpacaGetCredentials(
+        ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+      );
+      const alpaca: Alpaca = new Alpaca({
+        keyId: credentials.key,
+        secretKey: credentials.secret,
+        paper: credentials.paper,
+      });
+
+      // Execute order submission and schedule another cron job
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const [orderResponse] = await Promise.all([
+        alpaca.createOrder(takeProfitOrderRequest),
+        scheduleFractionableTakeProfitOrderCronJob(),
+      ]);
+
+      console.log(
+        `Take Profit Limit ${order.side} order submitted: \n`,
+        orderResponse,
+      );
+
+      return new Response(
+        JSON.stringify({
+          message: `Successfully submitted take profit order for ${order.symbol}`,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error("Failed to submit fractionable take profit order:", error);
+      throw error;
+    }
+  };
