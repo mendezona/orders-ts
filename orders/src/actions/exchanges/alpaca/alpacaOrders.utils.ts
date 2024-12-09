@@ -164,7 +164,7 @@ export const alpacaSubmitPairTradeOrder = async ({
 
   if (isOutsideNasdaqTradingHours()) {
     await alpacaSubmitLimitOrderCustomPercentage({
-      alpacaSymbol: alpacaSymbol,
+      alpacaSymbol,
       capitalPercentageToDeploy,
       setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
       accountName,
@@ -172,7 +172,7 @@ export const alpacaSubmitPairTradeOrder = async ({
     } as AlpacaSubmitLimitOrderCustomPercentageParams);
   } else {
     await alpacaSubmitMarketOrderCustomPercentage({
-      alpacaSymbol: alpacaSymbol,
+      alpacaSymbol,
       capitalPercentageToDeploy,
       accountName,
       tradingViewPrice,
@@ -180,10 +180,20 @@ export const alpacaSubmitPairTradeOrder = async ({
     } as AlpacaSubmitMarketOrderCustomPercentageParams);
   }
 
+  let executionPrice = "0";
+  if (!buyAlert) {
+    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
+      alpacaSymbol,
+      accountName,
+    );
+    executionPrice =
+      latestQuote.bidPrice.toString() ?? latestQuote.askPrice.toString();
+  }
+
   await saveBuyTradeToDatabaseFlipTradeAlertTable({
     exchange: EXCHANGES.ALPACA,
     symbol: tradingViewSymbol,
-    price: tradingViewPrice,
+    price: buyAlert ? tradingViewPrice : executionPrice,
   } as SaveBuyTradeToDatabaseFlipTradeAlertTableProps);
 
   if (submitTakeProfitOrder) {
