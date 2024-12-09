@@ -21,6 +21,7 @@
     "@sentry/nextjs": "^8.42.0",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@upstash/qstash": "^2.7.17",
+    "axios": "^1.7.9",
     "dayjs": "^1.11.13",
     "dayjs-plugin-utc": "^0.1.2",
     "decimal.js": "^10.4.3",

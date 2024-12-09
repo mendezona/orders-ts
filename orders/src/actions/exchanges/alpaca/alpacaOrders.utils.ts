@@ -1,5 +1,6 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
+import { AxiosError } from "axios";
 import Decimal from "decimal.js";
 import { VERCEL_MAXIMUM_SERVER_LIMIT } from "~/actions/actions.constants";
 import {
@@ -857,12 +858,9 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets =
         paper: credentials.paper,
       });
 
-      // Execute order submission and schedule another cron job
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const [orderResponse] = await Promise.all([
-        alpaca.createOrder(takeProfitOrderRequest),
-        scheduleFractionableTakeProfitOrderCronJob(),
-      ]);
+      const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
+      await scheduleFractionableTakeProfitOrderCronJob();
 
       console.log(
         `Take Profit Limit ${order.side} order submitted: \n`,
@@ -879,7 +877,33 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets =
         },
       );
     } catch (error) {
-      Sentry.captureException(error);
+      if (error instanceof AxiosError) {
+        Sentry.captureException(error, {
+          extra: {
+            errorMessage: error.message,
+            errorStack: error.stack,
+            errorDetails: JSON.stringify(
+              error,
+              Object.getOwnPropertyNames(error),
+            ),
+            context: "alpacaSubmitTakeProfitOrderForFractionableAssets",
+            responseData: error.response?.data,
+            responseStatus: error.response?.status,
+            responseHeaders: error.response?.headers,
+            requestData: error.config?.data,
+            requestMethod: error.config?.method,
+            requestURL: error.config?.url,
+            requestHeaders: error.config?.headers,
+          },
+          tags: {
+            errorType: "alpacaSubmitTakeProfitOrderForFractionableAssets",
+            statusCode: error.response?.status?.toString(),
+          },
+        });
+      } else {
+        Sentry.captureException(error);
+      }
+
       console.error("Failed to submit fractionable take profit order:", error);
       throw error;
     }
