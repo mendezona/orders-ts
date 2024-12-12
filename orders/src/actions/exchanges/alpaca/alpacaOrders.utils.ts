@@ -919,7 +919,9 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets =
         side: order.side,
         type: OrderTypeSchema.Enum.limit,
         time_in_force: TimeInForceSchema.Enum.day,
-        limit_price: new Decimal(order.limitPrice).toNumber(),
+        limit_price: new Decimal(order.limitPrice)
+          .toDecimalPlaces(2, Decimal.ROUND_DOWN)
+          .toNumber(),
         extended_hours: true,
       };
 
