@@ -317,10 +317,8 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     const [orderResponse, latestQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
       alpacaGetLatestQuote(orderRequest.symbol ?? "", accountName),
-    ]);
-
+    ] as const);
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
-    console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
 
     if (submitTakeProfitOrder) {
       await wait(10000);
@@ -373,8 +371,27 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
       console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
     }
   } catch (error) {
-    Sentry.captureException(error);
-    console.error("Error - alpacaSubmitLimitOrderCustomQuantity:", error);
+    Sentry.captureException(error, {
+      extra: {
+        context: "alpacaSubmitLimitOrderCustomQuantity - Promise.all",
+        orderRequest: JSON.stringify(orderRequest),
+        orderSide,
+        accountName,
+        symbol: orderRequest.symbol,
+        errorDetails:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      },
+      tags: {
+        function: "alpacaSubmitLimitOrderCustomQuantity",
+        operation: "createOrder_and_getLatestQuote",
+      },
+    });
     throw error;
   }
 };
@@ -506,10 +523,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     const [orderResponse, latestQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
       alpacaGetLatestQuote(orderRequest.symbol ?? "", accountName),
-    ]);
-
+    ] as const);
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
-    console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomPercentage");
 
     if (submitTakeProfitOrder) {
       await wait(10000);
@@ -574,8 +589,28 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
       console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
     }
   } catch (error) {
-    Sentry.captureException(error);
-    console.error("Error - alpacaSubmitLimitOrderCustomPercentage:", error);
+    Sentry.captureException(error, {
+      extra: {
+        context: "alpacaSubmitLimitOrderCustomPercentage - Promise.all",
+        orderRequest: JSON.stringify(orderRequest),
+        orderSide,
+        accountName,
+        symbol: orderRequest.symbol,
+        capitalPercentageToDeploy: capitalPercentageToDeploy.toString(),
+        errorDetails:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      },
+      tags: {
+        function: "alpacaSubmitLimitOrderCustomPercentage",
+        operation: "createOrder_and_getLatestQuote",
+      },
+    });
     throw error;
   }
 };
@@ -679,7 +714,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     const [orderResponse, takeProfitQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
       alpacaGetLatestQuote(alpacaSymbol, accountName),
-    ]);
+    ] as const);
     console.log(`Market ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
@@ -746,8 +781,28 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
 
     console.log("Alpaca Order End - alpacaSubmitMarketOrderCustomPercentage");
   } catch (error) {
-    Sentry.captureException(error);
-    console.error("Error - alpacaSubmitMarketOrderCustomPercentage:", error);
+    Sentry.captureException(error, {
+      extra: {
+        context: "alpacaSubmitMarketOrderCustomPercentage - Promise.all",
+        orderRequest: JSON.stringify(orderRequest),
+        orderSide,
+        accountName,
+        symbol: alpacaSymbol,
+        capitalPercentageToDeploy: capitalPercentageToDeploy.toString(),
+        errorDetails:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
+      },
+      tags: {
+        function: "alpacaSubmitMarketOrderCustomPercentage",
+        operation: "createOrder_and_getLatestQuote",
+      },
+    });
     throw error;
   }
 };
