@@ -4,7 +4,7 @@ This project utilises the following dependencies:
 
 - TradingView Webhooks
 - Next.js
-- Alpaca API
+- Alpaca API JS SDK
 - Sentry
 - PostgreSQL database
 - Upstash
