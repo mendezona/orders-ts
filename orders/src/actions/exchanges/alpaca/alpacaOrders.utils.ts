@@ -312,16 +312,25 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     });
 
     console.log("orderRequest:", orderRequest);
+    // Execute order creation and latest quote fetch concurrently
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const orderResponse = await alpaca.createOrder(orderRequest);
+    const [orderResponse, latestQuote] = await Promise.all([
+      alpaca.createOrder(orderRequest),
+      alpacaGetLatestQuote(orderRequest.symbol ?? "", accountName),
+    ]);
+
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
 
     if (submitTakeProfitOrder) {
       await wait(10000);
-      const takeProfitPrice: Decimal = limitPrice
-        .times(takeProfitPercentage)
-        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const takeProfitPrice: Decimal = buySideOrder
+        ? limitPrice
+            .times(takeProfitPercentage)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+        : new Decimal(latestQuote.bidPrice ?? latestQuote.askPrice)
+            .times(takeProfitPercentage)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const reverseOrderSide: OrderSide = !buySideOrder
         ? OrderSideSchema.enum.buy
         : OrderSideSchema.Enum.sell;
@@ -492,8 +501,13 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     });
 
     console.log("Limit order request:", orderRequest);
+    // Execute order creation and latest quote fetch concurrently
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const orderResponse = await alpaca.createOrder(orderRequest);
+    const [orderResponse, latestQuote] = await Promise.all([
+      alpaca.createOrder(orderRequest),
+      alpacaGetLatestQuote(orderRequest.symbol ?? "", accountName),
+    ]);
+
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
     console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomPercentage");
 
@@ -513,9 +527,13 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
         throw new Error(errorMessage);
       }
 
-      const takeProfitPrice: Decimal = limitPrice
-        .times(takeProfitPercentage)
-        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const takeProfitPrice: Decimal = buySideOrder
+        ? limitPrice
+            .times(takeProfitPercentage)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+        : new Decimal(latestQuote.bidPrice ?? latestQuote.askPrice)
+            .times(takeProfitPercentage)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
       const reverseOrderSide: OrderSide = !buySideOrder
         ? OrderSideSchema.enum.buy
         : OrderSideSchema.Enum.sell;
@@ -656,6 +674,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     });
 
     console.log("orderRequest:", orderRequest);
+    // Execute order creation and latest quote fetch concurrently
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [orderResponse, takeProfitQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
