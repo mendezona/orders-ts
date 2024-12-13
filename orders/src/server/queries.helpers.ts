@@ -1,22 +1,38 @@
-export const getFinancialYearDates = (): { startOfYear: Date, endOfYear: Date } => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const financialYearPeriod = process.env.FINANCIAL_YEAR_PERIOD ?? 'Jan-Dec';
+import dayjs from "dayjs";
+
+export const getFinancialYearDates = (): {
+  startOfYear: Date;
+  endOfYear: Date;
+} => {
+  const now = dayjs();
+  const currentYear = now.year();
+  const financialYearPeriod = process.env.FINANCIAL_YEAR_PERIOD ?? "Jan-Dec";
 
   let startOfYear: Date;
   let endOfYear: Date;
 
-  if (financialYearPeriod === 'July-June') {
-    if (now.getMonth() >= 6) {
-      startOfYear = new Date(currentYear, 6, 1);
-      endOfYear = new Date(currentYear + 1, 5, 30);
+  if (financialYearPeriod === "July-June") {
+    if (now.month() >= 6) {
+      // Financial year from July 1 (current year) to June 30 (next year)
+      startOfYear = dayjs().year(currentYear).month(6).date(1).toDate();
+      endOfYear = dayjs()
+        .year(currentYear + 1)
+        .month(5)
+        .date(30)
+        .toDate();
     } else {
-      startOfYear = new Date(currentYear - 1, 6, 1);
-      endOfYear = new Date(currentYear, 5, 30);
+      // Financial year from July 1 (previous year) to June 30 (current year)
+      startOfYear = dayjs()
+        .year(currentYear - 1)
+        .month(6)
+        .date(1)
+        .toDate();
+      endOfYear = dayjs().year(currentYear).month(5).date(30).toDate();
     }
   } else {
-    startOfYear = new Date(currentYear, 0, 1);
-    endOfYear = new Date(currentYear, 11, 31);
+    // Default to Jan-Dec financial year
+    startOfYear = dayjs().year(currentYear).month(0).date(1).toDate();
+    endOfYear = dayjs().year(currentYear).month(11).date(31).toDate();
   }
 
   return { startOfYear, endOfYear };
