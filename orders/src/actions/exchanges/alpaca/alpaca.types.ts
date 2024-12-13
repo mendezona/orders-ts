@@ -1,4 +1,5 @@
 import type Decimal from "decimal.js";
+import { z } from "zod";
 import {
   type AlpacaApiGetPosition,
   type AlpacaApiTradeAccountSchema,
@@ -90,3 +91,16 @@ export interface AlpacaSchedulePriceCheckAtNextInternalCronJobParams {
   tradingViewInterval: string;
   buyAlert: boolean;
 }
+
+export const tradingViewAlertSchema = z.object({
+  authenticationToken: z.string(),
+  ticker: z.string(),
+  closePrice: z.string(),
+  interval: z.string(),
+});
+
+export const alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema =
+  z.object({
+    tradingViewSymbol: z.string(),
+    buyAlert: z.boolean(),
+  });

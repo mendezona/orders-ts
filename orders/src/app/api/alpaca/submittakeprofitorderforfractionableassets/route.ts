@@ -1,8 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { alpacaSubmitTakeProfitOrderForFractionableAssets } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
 
-export const dynamic = "force-dynamic";
-
 export async function POST() {
   console.log(
     "Endpoint called - alpaca/submittakeprofitorderforfractionableassets",

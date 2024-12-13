@@ -1,15 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
+import { tradingViewAlertSchema } from "~/actions/exchanges/alpaca/alpaca.types";
 import { alpacaSubmitPairTradeOrder } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
-
-export const dynamic = "force-dynamic";
-
-const tradingViewAlertSchema = z.object({
-  authenticationToken: z.string(),
-  ticker: z.string(),
-  closePrice: z.string(),
-  interval: z.string(),
-});
 
 export async function POST(request: Request) {
   console.log("Endpoint called - alpaca/pairtradesellalert");

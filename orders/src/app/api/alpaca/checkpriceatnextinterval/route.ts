@@ -1,14 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { z } from "zod";
+import { alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema } from "~/actions/exchanges/alpaca/alpaca.types";
 import { alpacaCheckLatestPriceAndReverseTradeCronJob } from "~/actions/exchanges/alpaca/alpacaCronJobs";
-
-export const dynamic = "force-dynamic";
-
-const alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema = z.object({
-  tradingViewSymbol: z.string(),
-  buyAlert: z.boolean(),
-});
 
 export const POST = verifySignatureAppRouter(async (request: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
