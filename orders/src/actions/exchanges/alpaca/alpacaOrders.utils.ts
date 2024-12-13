@@ -881,106 +881,85 @@ export const alpacaCancelAllOpenOrders = async (
  *
  * @returns The take profit order.
  */
-export const alpacaSubmitTakeProfitOrderForFractionableAssets =
-  async (): Promise<Response> => {
-    try {
-      const order = await getFirstFractionableTakeProfitOrder();
+export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
+  try {
+    const order = await getFirstFractionableTakeProfitOrder();
 
-      if (!order) {
-        console.log("No fractionable take profit orders found");
-        return new Response(JSON.stringify({ message: "No orders found" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      const currentPosition = await alpacaGetPositionForAsset(
-        order.symbol,
-        ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-        5,
-      );
-
-      if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
-        await deleteAllFractionableTakeProfitOrders();
-
-        console.log("No open position found to create take profit order");
-        return new Response(
-          JSON.stringify({ message: "No open position found" }),
-          {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-
-      const takeProfitOrderRequest = {
-        symbol: order.symbol,
-        qty: new Decimal(order.quantity).toNumber(),
-        side: order.side,
-        type: OrderTypeSchema.Enum.limit,
-        time_in_force: TimeInForceSchema.Enum.day,
-        limit_price: new Decimal(order.limitPrice)
-          .toDecimalPlaces(2, Decimal.ROUND_DOWN)
-          .toNumber(),
-        extended_hours: true,
-      };
-
-      const credentials = alpacaGetCredentials(
-        ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-      );
-      const alpaca: Alpaca = new Alpaca({
-        keyId: credentials.key,
-        secretKey: credentials.secret,
-        paper: credentials.paper,
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-      await scheduleFractionableTakeProfitOrderCronJob();
-
-      console.log(
-        `Take Profit Limit ${order.side} order submitted: \n`,
-        orderResponse,
-      );
-
-      return new Response(
-        JSON.stringify({
-          message: `Successfully submitted take profit order for ${order.symbol}`,
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        Sentry.captureException(error, {
-          extra: {
-            errorMessage: error.message,
-            errorStack: error.stack,
-            errorDetails: JSON.stringify(
-              error,
-              Object.getOwnPropertyNames(error),
-            ),
-            context: "alpacaSubmitTakeProfitOrderForFractionableAssets",
-            responseData: error.response?.data,
-            responseStatus: error.response?.status,
-            responseHeaders: error.response?.headers,
-            requestData: error.config?.data,
-            requestMethod: error.config?.method,
-            requestURL: error.config?.url,
-            requestHeaders: error.config?.headers,
-          },
-          tags: {
-            errorType: "alpacaSubmitTakeProfitOrderForFractionableAssets",
-            statusCode: error.response?.status?.toString(),
-          },
-        });
-      } else {
-        Sentry.captureException(error);
-      }
-
-      console.error("Failed to submit fractionable take profit order:", error);
-      throw error;
+    if (!order) {
+      console.log("No fractionable take profit orders found");
+      return;
     }
-  };
+
+    const currentPosition = await alpacaGetPositionForAsset(
+      order.symbol,
+      ALPACA_LIVE_TRADING_ACCOUNT_NAME,
+      5,
+    );
+
+    if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
+      await deleteAllFractionableTakeProfitOrders();
+      const errorMessage = "No open position found to create take profit order";
+      console.log(errorMessage);
+
+      throw new Error(errorMessage);
+    }
+
+    const takeProfitOrderRequest = {
+      symbol: order.symbol,
+      qty: new Decimal(order.quantity).toNumber(),
+      side: order.side,
+      type: OrderTypeSchema.Enum.limit,
+      time_in_force: TimeInForceSchema.Enum.day,
+      limit_price: new Decimal(order.limitPrice)
+        .toDecimalPlaces(2, Decimal.ROUND_DOWN)
+        .toNumber(),
+      extended_hours: true,
+    };
+
+    const credentials = alpacaGetCredentials(ALPACA_LIVE_TRADING_ACCOUNT_NAME);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
+    await scheduleFractionableTakeProfitOrderCronJob();
+
+    console.log(
+      `Take Profit Limit ${order.side} order submitted: \n`,
+      orderResponse,
+    );
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          errorStack: error.stack,
+          errorDetails: JSON.stringify(
+            error,
+            Object.getOwnPropertyNames(error),
+          ),
+          context: "alpacaSubmitTakeProfitOrderForFractionableAssets",
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          errorType: "alpacaSubmitTakeProfitOrderForFractionableAssets",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error);
+    }
+
+    console.error("Failed to submit fractionable take profit order:", error);
+    throw error;
+  }
+};

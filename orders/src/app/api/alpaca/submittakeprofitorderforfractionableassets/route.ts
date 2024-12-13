@@ -5,10 +5,21 @@ export async function POST() {
   console.log(
     "Endpoint called - alpaca/submittakeprofitorderforfractionableassets",
   );
-  try {
-    const response = await alpacaSubmitTakeProfitOrderForFractionableAssets();
 
-    return response;
+  try {
+    await alpacaSubmitTakeProfitOrderForFractionableAssets();
+
+    return new Response(
+      JSON.stringify({
+        message: `alpaca/submittakeprofitorderforfractionableassets - Take profit order submitted`,
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
   } catch (error) {
     Sentry.captureException(error);
     console.error(
