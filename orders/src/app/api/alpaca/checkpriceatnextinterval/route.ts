@@ -12,7 +12,6 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
     const json = await request.json();
     const data =
       alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema.parse(json);
-    console.log("checkpriceatnextinterval: data", data);
 
     await alpacaCheckLatestPriceAndReverseTradeCronJob({
       tradingViewSymbol: data.tradingViewSymbol,
