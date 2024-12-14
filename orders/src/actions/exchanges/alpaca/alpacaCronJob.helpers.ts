@@ -6,6 +6,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
+import { NEW_YORK_TIMEZONE } from "../exchanges.contants";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import { type AlpacaCalendar } from "./alpacaApi.types";
 
@@ -46,9 +47,9 @@ export const alpacaGetNextIntervalTime = async (
     throw new Error(errorMessage);
   }
 
-  const currentNYTime = dayjs().tz("America/New_York");
+  const currentNYTime = dayjs().tz(NEW_YORK_TIMEZONE);
   const tradingDay: AlpacaCalendar = calendar[0];
-  const tradingDate = dayjs(tradingDay.date).tz("America/New_York");
+  const tradingDate = dayjs(tradingDay.date).tz(NEW_YORK_TIMEZONE);
 
   const tradingStart: dayjs.Dayjs = tradingDate
     .set("hour", parseInt(tradingDay.session_open.slice(0, 2), 10))
@@ -148,7 +149,7 @@ export const alpacaGetNextAvailableTradingDay = async (date: Dayjs) => {
  */
 export const scheduleFractionableTakeProfitOrderCronJob =
   async (): Promise<void> => {
-    const now = dayjs().tz("America/New_York");
+    const now = dayjs().tz(NEW_YORK_TIMEZONE);
     const { nextSessionOpen } = await alpacaGetNextAvailableTradingDay(now);
 
     // Convert nextSessionOpen to UTC

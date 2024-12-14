@@ -301,3 +301,11 @@ export const AlpacaCalendarSchema = z.object({
   settlement_date: z.string().optional().nullable(),
 });
 export type AlpacaCalendar = z.infer<typeof AlpacaCalendarSchema>;
+
+export const AlpacaClockSchema = z.object({
+  timestamp: z.string(),
+  is_open: z.boolean(),
+  next_open: z.string(),
+  next_close: z.string(),
+});
+export type AlpacaClock = z.infer<typeof AlpacaClockSchema>;

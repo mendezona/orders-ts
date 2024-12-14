@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { AxiosError } from "axios";
 import Decimal from "decimal.js";
 import { VERCEL_MAXIMUM_SERVER_LIMIT } from "~/actions/actions.constants";
+import { wait } from "~/actions/actions.utils";
 import {
   deleteAllFractionableTakeProfitOrders,
   getFirstFractionableTakeProfitOrder,
@@ -18,11 +19,7 @@ import {
   EXCHANGES,
   EXCHANGE_CAPITAL_GAINS_TAX_RATE,
 } from "../exchanges.contants";
-import {
-  isOutsideNasdaqTradingHours,
-  logTimesInNewYorkAndLocalTimezone,
-  wait,
-} from "../exchanges.utils";
+import { getIsMarketOpen, logTimezonesOfCurrentTime } from "../exchanges.utils";
 import {
   ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   ALPACA_LIVE_TRADING_ACCOUNT_NAME,
@@ -81,7 +78,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   submitTakeProfitOrder = true,
 }: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
   console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
-  logTimesInNewYorkAndLocalTimezone();
+  logTimezonesOfCurrentTime();
 
   // IMPORTANT: Symbols will automatically be flipped if the current symbol is the inverse of the tradingViewSymbol.
   // Eg. alpacaSymbol will also be the asset to purchase.
@@ -118,7 +115,7 @@ export const alpacaSubmitPairTradeOrder = async ({
     openPositionOfInverseTrade.openPositionFound &&
     openPositionOfInverseTrade.qty
   ) {
-    if (isOutsideNasdaqTradingHours()) {
+    if (await getIsMarketOpen()) {
       const assetBalance: Decimal = openPositionOfInverseTrade.qty;
       await alpacaSubmitLimitOrderCustomQuantity({
         alpacaSymbol: alpacaInverseSymbol,
@@ -163,7 +160,7 @@ export const alpacaSubmitPairTradeOrder = async ({
     }
   }
 
-  if (isOutsideNasdaqTradingHours()) {
+  if (await getIsMarketOpen()) {
     await alpacaSubmitLimitOrderCustomPercentage({
       alpacaSymbol,
       capitalPercentageToDeploy,
@@ -245,7 +242,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   const credentials = alpacaGetCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomQuantity");
-  logTimesInNewYorkAndLocalTimezone();
+  logTimezonesOfCurrentTime();
 
   if (!limitPrice) {
     let quotePrice: Decimal;
@@ -423,7 +420,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   const credentials = alpacaGetCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomPercentage");
-  logTimesInNewYorkAndLocalTimezone();
+  logTimezonesOfCurrentTime();
 
   const accountInfo = await alpacaGetAccountBalance(accountName);
   const accountEquity = accountInfo.accountEquity;
@@ -641,7 +638,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   const credentials = alpacaGetCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaSubmitMarketOrderCustomPercentage");
-  logTimesInNewYorkAndLocalTimezone();
+  logTimezonesOfCurrentTime();
 
   const accountInfo = await alpacaGetAccountBalance(accountName);
   const accountEquity = accountInfo.accountEquity;
@@ -820,7 +817,7 @@ export const alpacaCloseAllHoldingsOfAsset = async (
   const credentials = alpacaGetCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaCloseAllHoldingsOfAsset");
-  logTimesInNewYorkAndLocalTimezone();
+  logTimezonesOfCurrentTime();
 
   try {
     const alpaca: Alpaca = new Alpaca({

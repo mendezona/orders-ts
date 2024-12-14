@@ -2,9 +2,9 @@ import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { ZodError } from "zod";
+import { wait } from "~/actions/actions.utils";
 import { getLatestTaxAmountCurrentFinancialYear } from "~/server/queries";
 import { DEVELOPMENT_MODE } from "../../actions.constants";
-import { wait } from "../exchanges.utils";
 import {
   ALPACA_ACCOUNTS,
   ALPACA_LIVE_TRADING_ACCOUNT_NAME,
