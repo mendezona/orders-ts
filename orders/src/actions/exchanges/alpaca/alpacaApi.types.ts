@@ -292,7 +292,7 @@ export const AssetSchema = z.object({
   attributes: z.array(z.string()).optional().nullable(),
 });
 
-export const AlpacaCalendarSchema = z.object({
+const AlpacaDateSchema = z.object({
   date: z.string().optional().nullable(),
   open: z.string().optional().nullable(),
   close: z.string().optional().nullable(),
@@ -300,7 +300,8 @@ export const AlpacaCalendarSchema = z.object({
   session_close: z.string(),
   settlement_date: z.string().optional().nullable(),
 });
-export type AlpacaCalendar = z.infer<typeof AlpacaCalendarSchema>;
+export type AlpacaDate = z.infer<typeof AlpacaDateSchema>;
+export const AlpacaCalendarSchema = z.array(AlpacaDateSchema);
 
 export const AlpacaClockSchema = z.object({
   timestamp: z.string(),

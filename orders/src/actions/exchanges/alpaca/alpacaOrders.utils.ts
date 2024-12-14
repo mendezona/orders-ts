@@ -46,8 +46,10 @@ import {
   OrderTypeSchema,
   TimeInForceSchema,
 } from "./alpacaApi.types";
-import { scheduleFractionableTakeProfitOrderCronJob } from "./alpacaCronJob.helpers";
-import { alpacaSchedulePriceCheckAtNextIntervalCronJob } from "./alpacaCronJobs";
+import {
+  alpacaSchedulePriceCheckAtNextIntervalCronJob,
+  scheduleFractionableTakeProfitOrderCronJob,
+} from "./alpacaCronJobs";
 import {
   alpacaAreHoldingsClosed,
   alpacaCalculateProfitLoss,

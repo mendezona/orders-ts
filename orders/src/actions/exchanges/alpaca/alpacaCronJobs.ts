@@ -6,12 +6,16 @@ import utc from "dayjs/plugin/utc";
 import Decimal from "decimal.js";
 import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
 import { getLatestFlipAlertForSymbol } from "~/server/queries";
+import { NEW_YORK_TIMEZONE } from "../exchanges.constants";
 import {
   type AlpacaCheckLatestPriceAndReverseTradeCronJobParams,
   type AlpacaSchedulePriceCheckAtNextInternalCronJobParams,
   type AlpacaSubmitPairTradeOrderParams,
 } from "./alpaca.types";
-import { alpacaGetNextIntervalTime } from "./alpacaCronJob.helpers";
+import {
+  getAlpacaNextAvailableTradingDay,
+  getAlpacaNextIntervalTime,
+} from "./alpacaCronJob.helpers";
 import { alpacaGetLatestQuote } from "./alpacaOrders.helpers";
 import {
   alpacaCancelAllOpenOrders,
@@ -50,7 +54,7 @@ export const alpacaSchedulePriceCheckAtNextIntervalCronJob = async ({
   // Get the next interval time
   const now = dayjs.utc();
   console.log(`Current UTC time: ${now.toISOString()}`);
-  const nextTime = await alpacaGetNextIntervalTime(
+  const nextTime = await getAlpacaNextIntervalTime(
     now,
     parseInt(tradingViewInterval, 10),
   );
@@ -153,3 +157,36 @@ export const alpacaCheckLatestPriceAndReverseTradeCronJob = async ({
     throw error;
   }
 };
+
+/**
+ * Schedules a cron job to submit a fractionable take profit order at 3 AM NY time. Fractionable orders only allow time in force of day therefore this cron job is scheduled every trading day.
+ */
+export const scheduleFractionableTakeProfitOrderCronJob =
+  async (): Promise<void> => {
+    const now = dayjs().tz(NEW_YORK_TIMEZONE);
+    const { nextSessionOpen } = await getAlpacaNextAvailableTradingDay(now);
+
+    // Convert nextSessionOpen to UTC
+    const utcDateTime = nextSessionOpen.utc();
+
+    // Extract minute, hour, day, and month for the cron expression
+    const minute = utcDateTime.minute();
+    const hour = utcDateTime.hour();
+    const dayOfMonth = utcDateTime.date();
+    const month = utcDateTime.month() + 1; // month() returns 0-11, cron uses 1-12
+
+    // Build the cron expression
+    const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
+
+    console.log(
+      `Scheduling fractionable take profit order for ${nextSessionOpen.format(
+        "YYYY-MM-DD HH:mm:ss z",
+      )} NY time, which is ${utcDateTime.format("YYYY-MM-DD HH:mm:ss [UTC]")} UTC`,
+    );
+
+    const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
+    await client.schedules.create({
+      destination: `${ORDER_TS_BASE_URL}/api/alpaca/submittakeprofitorderforfractionableassets`,
+      cron: cronExpression,
+    });
+  };
