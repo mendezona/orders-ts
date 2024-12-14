@@ -36,6 +36,7 @@ export interface AlpacaLatestQuote {
 
 export interface AlpacaOrderRequestParams {
   alpacaSymbol: string;
+  buyAlert: boolean;
   buySideOrder: boolean;
   accountName: string;
   orderType: OrderType;

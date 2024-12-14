@@ -58,6 +58,10 @@ export const logTimezonesOfCurrentTime = (
     .tz(localTimezone)
     .format("YYYY-MM-DD HH:mm:ss");
 
-  console.log(`Current time in New York: ${timeInNewYork}`);
-  console.log(`Current time in Local Timezone: ${timeInLocalTimezone}`);
+  console.log(
+    `logTimezonesOfCurrentTime - Current time in New York: ${timeInNewYork}`,
+  );
+  console.log(
+    `logTimezonesOfCurrentTime - Current time in Local Timezone: ${timeInLocalTimezone}`,
+  );
 };

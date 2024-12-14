@@ -77,148 +77,181 @@ export const alpacaSubmitPairTradeOrder = async ({
   scheduleCronJob = true,
   submitTakeProfitOrder = true,
 }: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
-  console.log("Alpaca Order Begin - alpacaSubmitPairTradeOrder");
-  logTimezonesOfCurrentTime();
+  try {
+    console.log("alpacaSubmitPairTradeOrder - Begin");
+    logTimezonesOfCurrentTime();
 
-  // IMPORTANT: Symbols will automatically be flipped if the current symbol is the inverse of the tradingViewSymbol.
-  // Eg. alpacaSymbol will also be the asset to purchase.
-  // Eg. alpacaInverseSymbol will be the inverse stock to sell (potential current holding).
-  const alpacaSymbol: string | undefined = buyAlert
-    ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol]
-    : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol];
-  const alpacaInverseSymbol: string | undefined = buyAlert
-    ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol]
-    : ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol];
+    // IMPORTANT: Symbols will automatically be flipped if the current symbol is the inverse of the tradingViewSymbol.
+    // Eg. alpacaSymbol will also be the asset to purchase.
+    // Eg. alpacaInverseSymbol will be the inverse stock to sell (potential current holding).
+    const alpacaSymbol: string | undefined = buyAlert
+      ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol]
+      : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol];
+    const alpacaInverseSymbol: string | undefined = buyAlert
+      ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol]
+      : ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol];
 
-  if (!alpacaSymbol || !alpacaInverseSymbol) {
-    const errorMessage = `Error - alpacaSubmitPairTradeOrder: ${tradingViewSymbol} not found`;
-    console.log(errorMessage);
-    Sentry.captureMessage(errorMessage);
-    throw new Error(errorMessage);
-  }
+    if (!alpacaSymbol || !alpacaInverseSymbol) {
+      const errorMessage = `alpacaSubmitPairTradeOrder - Error, ${tradingViewSymbol} not found`;
+      console.log(errorMessage);
+      throw new Error(errorMessage);
+    }
 
-  console.log("alpacaSymbol", alpacaSymbol);
-  console.log("alpacaInverseSymbol", alpacaInverseSymbol);
+    console.log("alpacaSubmitPairTradeOrder - alpacaSymbol:", alpacaSymbol);
+    console.log(
+      "alpacaSubmitPairTradeOrder - alpacaInverseSymbol:",
+      alpacaInverseSymbol,
+    );
 
-  /**
-   *  If there is no sell order found for current symbol, sell all holdings and save CGT to database.
-   *
-   * Assumes there is only one order open at a time for a given symbol
-   **/
-  const [openPositionOfInverseTrade] = await Promise.all([
-    getAlpacaPositionForAsset(alpacaInverseSymbol),
-    alpacaCancelAllOpenOrders(accountName),
-    deleteAllFractionableTakeProfitOrders(),
-  ]);
+    /**
+     *  If there is no sell order found for current symbol, sell all holdings and save CGT to database.
+     *
+     * Assumes there is only one order open at a time for a given symbol
+     **/
+    const [openPositionOfInverseTrade, marketOpen] = await Promise.all([
+      getAlpacaPositionForAsset(alpacaInverseSymbol),
+      getIsMarketOpen(),
+      alpacaCancelAllOpenOrders(accountName),
+      deleteAllFractionableTakeProfitOrders(),
+    ]);
 
-  if (
-    openPositionOfInverseTrade.openPositionFound &&
-    openPositionOfInverseTrade.qty
-  ) {
-    if (await getIsMarketOpen()) {
-      const assetBalance: Decimal = openPositionOfInverseTrade.qty;
-      await alpacaSubmitLimitOrderCustomQuantity({
-        alpacaSymbol: alpacaInverseSymbol,
-        quantity: assetBalance,
-        buySideOrder: false,
-        setSlippagePercentage: new Decimal("0.01"),
-        submitTakeProfitOrder: false,
+    // Sell all holdings
+    if (
+      openPositionOfInverseTrade.openPositionFound &&
+      openPositionOfInverseTrade.qty
+    ) {
+      console.log(
+        "alpacaSubmitPairTradeOrder - sell all holdings for:",
+        alpacaInverseSymbol,
+      );
+      if (marketOpen) {
+        const assetBalance: Decimal = openPositionOfInverseTrade.qty;
+        await alpacaSubmitLimitOrderCustomQuantity({
+          alpacaSymbol: alpacaInverseSymbol,
+          quantity: assetBalance,
+          buyAlert,
+          buySideOrder: false,
+          setSlippagePercentage: new Decimal("0.01"),
+          submitTakeProfitOrder: false,
+          accountName,
+          orderType: OrderTypeSchema.Enum.limit,
+          timeInForce: TimeInForceSchema.Enum.day,
+        });
+      } else {
+        await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+      }
+
+      console.log(
+        "alpacaSubmitPairTradeOrder - check if position is closed for:",
+        alpacaInverseSymbol,
+      );
+      const timeout = VERCEL_MAXIMUM_SERVER_LIMIT;
+      const startTime: number = Date.now();
+      while ((Date.now() - startTime) / 1000 < timeout) {
+        if (
+          !(await getAlpacaIsPositionOpen(alpacaInverseSymbol, accountName))
+        ) {
+          break;
+        }
+        await wait(1000);
+      }
+
+      // Calculate and save tax to database, if applicable
+      console.log(
+        "alpacaSubmitPairTradeOrder - calculating and saving tax for:",
+        alpacaInverseSymbol,
+      );
+      if (calculateTax) {
+        const profitLossAmount: Decimal = await getAlpacaCalculateProfitOrLoss(
+          alpacaInverseSymbol,
+          accountName,
+        );
+        const taxAmount: Decimal = profitLossAmount
+          .times(EXCHANGE_CAPITAL_GAINS_TAX_RATE)
+          .toDecimalPlaces(2, Decimal.ROUND_UP);
+        console.log(
+          "alpacaSubmitPairTradeOrder - tax amount:",
+          taxAmount.toString(),
+        );
+
+        if (taxAmount.gt(0)) {
+          await saveSellTradeToDatabaseSellTable({
+            exchange: EXCHANGES.ALPACA,
+            symbol: alpacaInverseSymbol,
+            profitOrLossAmount: profitLossAmount.toString(),
+            taxableAmount: taxAmount.toString(),
+            buyAlert,
+          });
+        }
+      }
+    }
+
+    if (marketOpen) {
+      await alpacaSubmitLimitOrderCustomPercentage({
+        alpacaSymbol,
+        capitalPercentageToDeploy,
+        setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
         accountName,
+        submitTakeProfitOrder,
+        buyAlert,
+        buySideOrder: true,
         orderType: OrderTypeSchema.Enum.limit,
         timeInForce: TimeInForceSchema.Enum.day,
       });
     } else {
-      await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
-    }
-
-    const timeout = VERCEL_MAXIMUM_SERVER_LIMIT;
-    const startTime: number = Date.now();
-    while ((Date.now() - startTime) / 1000 < timeout) {
-      if (!(await getAlpacaIsPositionOpen(alpacaInverseSymbol, accountName))) {
-        break;
-      }
-      await wait(1000);
-    }
-
-    // Calculate and save tax, if applicable
-    if (calculateTax) {
-      const profitLossAmount: Decimal = await getAlpacaCalculateProfitOrLoss(
-        alpacaInverseSymbol,
+      await alpacaSubmitMarketOrderCustomPercentage({
+        alpacaSymbol,
+        capitalPercentageToDeploy,
         accountName,
-      );
-      const taxAmount: Decimal = profitLossAmount
-        .times(EXCHANGE_CAPITAL_GAINS_TAX_RATE)
-        .toDecimalPlaces(2, Decimal.ROUND_UP);
-      console.log("tax_amount", taxAmount.toString(), "\n");
+        tradingViewPrice,
+        submitTakeProfitOrder,
+        buyAlert,
+        buySideOrder: true,
+        orderType: OrderTypeSchema.Enum.market,
+        timeInForce: TimeInForceSchema.Enum.day,
+      });
+    }
 
-      if (taxAmount.gt(0)) {
-        await saveSellTradeToDatabaseSellTable({
-          exchange: EXCHANGES.ALPACA,
-          symbol: alpacaInverseSymbol,
-          profitOrLossAmount: profitLossAmount.toString(),
-          taxableAmount: taxAmount.toString(),
-          buyAlert,
-        });
+    let executionPrice = "0";
+    if (!buyAlert) {
+      const latestQuote: AlpacaLatestQuote =
+        await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
+      executionPrice =
+        latestQuote.bidPrice.toString() ?? latestQuote.askPrice.toString();
+    }
+
+    await saveBuyTradeToDatabaseFlipTradeAlertTable({
+      exchange: EXCHANGES.ALPACA,
+      symbol: tradingViewSymbol,
+      price: buyAlert ? tradingViewPrice : executionPrice,
+    });
+
+    if (submitTakeProfitOrder) {
+      await alpacaSubmitTakeProfitOrderForFractionableAssets();
+    }
+
+    if (scheduleCronJob) {
+      if (!tradingViewInterval) {
+        const errorMessage = "Error - Interval required to set cron job";
+        console.log(errorMessage);
+        Sentry.captureMessage(errorMessage);
+        throw new Error(errorMessage);
       }
+
+      await alpacaCronJobSchedulePriceCheckAtNextInterval({
+        tradingViewSymbol,
+        tradingViewPrice,
+        tradingViewInterval,
+        buyAlert,
+      });
     }
-  }
-
-  if (await getIsMarketOpen()) {
-    await alpacaSubmitLimitOrderCustomPercentage({
-      alpacaSymbol,
-      capitalPercentageToDeploy,
-      setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
-      accountName,
-      submitTakeProfitOrder,
-      buySideOrder: true,
-      orderType: OrderTypeSchema.Enum.limit,
-      timeInForce: TimeInForceSchema.Enum.day,
+  } catch (error) {
+    Sentry.captureException(error, {
+      extra: {
+        context: "alpacaSubmitPairTradeOrder",
+      },
     });
-  } else {
-    await alpacaSubmitMarketOrderCustomPercentage({
-      alpacaSymbol,
-      capitalPercentageToDeploy,
-      accountName,
-      tradingViewPrice,
-      submitTakeProfitOrder,
-      buySideOrder: true,
-      orderType: OrderTypeSchema.Enum.market,
-      timeInForce: TimeInForceSchema.Enum.day,
-    });
-  }
-
-  let executionPrice = "0";
-  if (!buyAlert) {
-    const latestQuote: AlpacaLatestQuote =
-      await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
-    executionPrice =
-      latestQuote.bidPrice.toString() ?? latestQuote.askPrice.toString();
-  }
-
-  await saveBuyTradeToDatabaseFlipTradeAlertTable({
-    exchange: EXCHANGES.ALPACA,
-    symbol: tradingViewSymbol,
-    price: buyAlert ? tradingViewPrice : executionPrice,
-  });
-
-  if (submitTakeProfitOrder) {
-    await alpacaSubmitTakeProfitOrderForFractionableAssets();
-  }
-
-  if (scheduleCronJob) {
-    if (!tradingViewInterval) {
-      const errorMessage = "Error - Interval required to set cron job";
-      console.log(errorMessage);
-      Sentry.captureMessage(errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    await alpacaCronJobSchedulePriceCheckAtNextInterval({
-      tradingViewSymbol,
-      tradingViewPrice,
-      tradingViewInterval,
-      buyAlert,
-    });
+    throw error;
   }
 };
 
@@ -323,6 +356,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
+      // TODO: Could send to a queue with delay of 10 seconds instead
       await wait(10000);
       const takeProfitPrice: Decimal = buySideOrder
         ? limitPrice
@@ -412,6 +446,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
  */
 export const alpacaSubmitLimitOrderCustomPercentage = async ({
   alpacaSymbol,
+  buyAlert,
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
@@ -525,6 +560,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
+      // TODO: Could send to a queue with delay of 10 seconds instead
       await wait(10000);
       const currentPosition = await getAlpacaPositionForAsset(
         alpacaSymbol,
@@ -539,7 +575,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
         throw new Error(errorMessage);
       }
 
-      const takeProfitPrice: Decimal = buySideOrder
+      const takeProfitPrice: Decimal = buyAlert
         ? limitPrice
             .times(takeProfitPercentage)
             .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
@@ -627,6 +663,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
 export const alpacaSubmitMarketOrderCustomPercentage = async ({
   alpacaSymbol,
   tradingViewPrice,
+  buyAlert,
   buySideOrder = true,
   capitalPercentageToDeploy = ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
@@ -713,6 +750,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     console.log(`Market ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
+      // TODO: Could send to a queue with delay of 10 seconds instead
       await wait(10000);
       const currentPosition = await getAlpacaPositionForAsset(
         alpacaSymbol,
@@ -728,7 +766,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
       }
 
       const principalPrice: Decimal = new Decimal(
-        buySideOrder
+        buyAlert
           ? tradingViewPrice
           : (takeProfitQuote.bidPrice ?? takeProfitQuote.askPrice),
       );
