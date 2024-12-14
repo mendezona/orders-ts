@@ -31,26 +31,24 @@ import {
 export const alpacaGetCredentials = (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   developmentModeToggle: boolean = DEVELOPMENT_MODE,
-): AlpacaAccountCredentials => {
-  const accountInfo: AlpacaAccountCredentials | undefined =
-    !developmentModeToggle
-      ? ALPACA_ACCOUNTS[accountName]
-      : ALPACA_ACCOUNTS[ALPACA_PAPER_TRADING_ACCOUNT_NAME];
+) => {
+  const accountInfo = !developmentModeToggle
+    ? ALPACA_ACCOUNTS[accountName]
+    : ALPACA_ACCOUNTS[ALPACA_PAPER_TRADING_ACCOUNT_NAME];
 
-  if (accountInfo) {
-    console.log("Alpaca account credentials found");
-    return {
-      endpoint: accountInfo.endpoint,
-      key: accountInfo.key,
-      secret: accountInfo.secret,
-      paper: accountInfo.paper,
-    };
-  } else {
-    const errorMessage = "Alpaca account credentials not found";
-    console.log(errorMessage);
-    Sentry.captureMessage(errorMessage);
-    throw new Error(errorMessage);
+  if (!accountInfo) {
+    throw new Error(
+      "alpacaGetCredentials - Alpaca account credentials not found",
+    );
   }
+
+  console.log("alpacaGetCredentials - Alpaca account credentials found");
+  return {
+    endpoint: accountInfo.endpoint,
+    key: accountInfo.key,
+    secret: accountInfo.secret,
+    paper: accountInfo.paper,
+  } as AlpacaAccountCredentials;
 };
 
 /**
@@ -65,53 +63,59 @@ export const alpacaGetAccountBalance = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   investTaxableIncome = true,
 ): Promise<AlpacaGetAccountBalance> => {
-  const credentials = alpacaGetCredentials(accountName);
-
-  const alpaca: Alpaca = new Alpaca({
-    keyId: credentials.key,
-    secretKey: credentials.secret,
-    paper: credentials.paper,
-  });
-
   try {
+    const credentials = alpacaGetCredentials(accountName);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
     const alpacaGetAccount: unknown = await alpaca.getAccount();
     const account = AlpacaApiTradeAccountSchema.parse(alpacaGetAccount);
-    const currentProfitAmount: string =
-      await getLatestTaxAmountCurrentFinancialYear();
-    const runningTotalOfTaxableProfits: Decimal = new Decimal(
-      currentProfitAmount,
-    );
-    const equity: Decimal = investTaxableIncome
+
+    const currentProfitAmount = await getLatestTaxAmountCurrentFinancialYear();
+    const runningTotalOfTaxableProfits = new Decimal(currentProfitAmount);
+    const accountEquity = investTaxableIncome
       ? new Decimal(account.equity!)
       : new Decimal(account.equity!).minus(runningTotalOfTaxableProfits);
-    const cash: Decimal = investTaxableIncome
+    const accountCash = investTaxableIncome
       ? new Decimal(account.cash!)
       : new Decimal(account.cash!).minus(runningTotalOfTaxableProfits);
 
-    console.log("Available equity minus taxable profits:", equity);
-    console.log("Available cash minus taxable profits:", cash);
+    console.log(
+      "alpacaGetAccountBalance - Available equity minus taxable profits:",
+      accountEquity,
+    );
+    console.log(
+      "alpacaGetAccountBalance - Available cash minus taxable profits:",
+      accountCash,
+    );
 
     return {
       account,
-      accountEquity: equity,
-      accountCash: cash,
-    };
+      accountEquity,
+      accountCash,
+    } as AlpacaGetAccountBalance;
   } catch (error) {
     Sentry.captureException(error);
     if (error instanceof ZodError) {
       console.error(
-        "alpacaGetAccountBalance - validation failed with ZodError:",
+        "alpacaGetAccountBalance - Validation failed with ZodError:",
         error.errors,
       );
     } else {
-      console.error("Error fetching account balance:", error);
+      console.error(
+        "alpacaGetAccountBalance - Error fetching account balance:",
+        error,
+      );
     }
     throw error;
   }
 };
 
 /**
- * Get the amount of assets you own available to trade for a single symbol.
+ * Get the amount of assets you own available to trade for a single asset.
  *
  * @param symbol - The symbol to search for the available asset balance.
  * @param accountName - The name of the account to search with.
@@ -125,7 +129,6 @@ export const alpacaGetPositionForAsset = async (
   retries = 0,
 ): Promise<AlpacaGetPositionForAsset> => {
   const credentials = alpacaGetCredentials(accountName);
-
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
     secretKey: credentials.secret,
