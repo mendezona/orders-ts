@@ -99,7 +99,11 @@ export const getAlpacaAccountBalance = async (
     };
     return accountBalance;
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        function: "getAlpacaAccountBalance",
+      },
+    });
     if (error instanceof ZodError) {
       console.error(
         "getAlpacaAccountBalance - Error validation failed with ZodError:",
@@ -161,7 +165,11 @@ export const getAlpacaPositionForAsset = async (
     console.log("getAlpacaPositionForAsset - Position details found");
     return positionForAsset;
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        function: "getAlpacaPositionForAsset",
+      },
+    });
     if (error instanceof ZodError) {
       console.error(
         "getAlpacaPositionForAsset - Error validation failed with ZodError:",

@@ -900,10 +900,8 @@ export const alpacaCloseAllHoldingsOfAsset = async (
 export const alpacaCancelAllOpenOrders = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<void> => {
-  const credentials = getAlpacaCredentials(accountName);
-  console.log("Alpaca Order Begin - alpacaCancelAllOpenOrders");
-
   try {
+    const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
       keyId: credentials.key,
       secretKey: credentials.secret,
@@ -911,15 +909,23 @@ export const alpacaCancelAllOpenOrders = async (
     });
 
     await alpaca.cancelAllOrders();
-    console.log("Successfully cancelled all open orders");
+    console.log(
+      "alpacaCancelAllOpenOrders - Successfully cancelled all open orders",
+    );
   } catch (error) {
     Sentry.captureException(error, {
       extra: {
         errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
         accountName,
       },
+      tags: {
+        function: "alpacaCancelAllOpenOrders",
+      },
     });
-    console.error("Failed to cancel all open orders:", error);
+    console.error(
+      "alpacaCancelAllOpenOrders - Error, failed to cancel all open orders:",
+      error,
+    );
     throw error;
   }
 };
@@ -934,7 +940,9 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
     const order = await getFirstFractionableTakeProfitOrder();
 
     if (!order) {
-      console.log("No fractionable take profit orders found");
+      console.log(
+        "alpacaSubmitTakeProfitOrderForFractionableAssets - No fractionable take profit orders found",
+      );
       return;
     }
 
@@ -945,11 +953,19 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
 
     if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
       await deleteAllFractionableTakeProfitOrders();
-      const errorMessage = "No open position found to create take profit order";
-      console.log(errorMessage);
 
+      const errorMessage =
+        "alpacaSubmitTakeProfitOrderForFractionableAssets - No open position found to create take profit order";
+      console.log(errorMessage);
       throw new Error(errorMessage);
     }
+
+    const credentials = getAlpacaCredentials(ALPACA_LIVE_TRADING_ACCOUNT_NAME);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
 
     const takeProfitOrderRequest = {
       symbol: order.symbol,
@@ -963,19 +979,9 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
       extended_hours: true,
     };
 
-    const credentials = getAlpacaCredentials(ALPACA_LIVE_TRADING_ACCOUNT_NAME);
-    const alpaca: Alpaca = new Alpaca({
-      keyId: credentials.key,
-      secretKey: credentials.secret,
-      paper: credentials.paper,
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-
+    await alpaca.createOrder(takeProfitOrderRequest);
     console.log(
-      `Take Profit Limit ${order.side} order submitted: \n`,
-      orderResponse,
+      `alpacaSubmitTakeProfitOrderForFractionableAssets - Take Profit Limit ${order.side} order submitted successfully`,
     );
   } catch (error) {
     if (error instanceof AxiosError) {
@@ -987,7 +993,6 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
             error,
             Object.getOwnPropertyNames(error),
           ),
-          context: "alpacaSubmitTakeProfitOrderForFractionableAssets",
           responseData: error.response?.data,
           responseStatus: error.response?.status,
           responseHeaders: error.response?.headers,
@@ -997,15 +1002,22 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
           requestHeaders: error.config?.headers,
         },
         tags: {
+          function: "alpacaSubmitTakeProfitOrderForFractionableAssets",
           errorType: "alpacaSubmitTakeProfitOrderForFractionableAssets",
           statusCode: error.response?.status?.toString(),
         },
       });
     } else {
-      Sentry.captureException(error);
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaSubmitTakeProfitOrderForFractionableAssets",
+        },
+      });
     }
-
-    console.error("Failed to submit fractionable take profit order:", error);
+    console.error(
+      "alpacaSubmitTakeProfitOrderForFractionableAssets - Error, failed to submit fractionable take profit order:",
+      error,
+    );
     throw error;
   }
 };
@@ -1016,7 +1028,7 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
  * @param tradingViewSymbol - The stock or crypto ticker symbol.
  * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa). This should be set to the original alert, eg. if alert was to go long this should be set to true.
  */
-export const alpacaReverseTradeOnFalseSignal = async ({
+export const alpacaSubmitReverseTradeOnFalseSignal = async ({
   tradingViewSymbol,
   buyAlert,
 }: AlpacaReverseTradeOnFalseSignalParams) => {
@@ -1032,7 +1044,7 @@ export const alpacaReverseTradeOnFalseSignal = async ({
       : getQuote.bidPrice;
 
     console.log(
-      `alpacaReverseTradeOnFalseSignal - ${tradingViewSymbol}, buy alert: ${buyAlert}, last trade price: ${lastTradePrice.toString()}, quote price: ${quotePrice.toString()}`,
+      `alpacaSubmitReverseTradeOnFalseSignal - ${tradingViewSymbol}, buy alert: ${buyAlert}, last trade price: ${lastTradePrice.toString()}, quote price: ${quotePrice.toString()}`,
     );
 
     const shouldReverseTrade = buyAlert
@@ -1041,13 +1053,14 @@ export const alpacaReverseTradeOnFalseSignal = async ({
 
     if (!shouldReverseTrade) {
       console.log(
-        "alpacaReverseTradeOnFalseSignal - No trades initiated, handling graceful exit",
+        "alpacaSubmitReverseTradeOnFalseSignal - No trades initiated, handling graceful exit",
       );
       return;
     }
 
-    console.log("alpacaReverseTradeOnFalseSignal - Reverse trade initiated");
-    await alpacaCancelAllOpenOrders();
+    console.log(
+      "alpacaSubmitReverseTradeOnFalseSignal - Reverse trade initiated",
+    );
     const order: AlpacaSubmitPairTradeOrderParams = {
       tradingViewSymbol,
       tradingViewPrice: quotePrice.toString(),
@@ -1055,10 +1068,12 @@ export const alpacaReverseTradeOnFalseSignal = async ({
       scheduleCronJob: false,
       submitTakeProfitOrder: false,
     };
+
+    await alpacaCancelAllOpenOrders();
     await alpacaSubmitPairTradeOrder(order);
 
     console.log(
-      `alpacaReverseTradeOnFalseSignal - Successful for: ${tradingViewSymbol}`,
+      `alpacaSubmitReverseTradeOnFalseSignal - Successful for: ${tradingViewSymbol}`,
     );
   } catch (error) {
     Sentry.captureException(error, {
@@ -1067,9 +1082,12 @@ export const alpacaReverseTradeOnFalseSignal = async ({
         tradingViewSymbol,
         buyAlert,
       },
+      tags: {
+        function: "alpacaSubmitReverseTradeOnFalseSignal",
+      },
     });
     console.error(
-      "alpacaReverseTradeOnFalseSignal - Error Failed to execute reverse trade",
+      "alpacaSubmitReverseTradeOnFalseSignal - Error, failed to execute reverse trade",
       error,
     );
     throw error;

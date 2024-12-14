@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { z } from "zod";
 import { alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema } from "~/actions/exchanges/alpaca/alpaca.types";
-import { alpacaReverseTradeOnFalseSignal } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
+import { alpacaSubmitReverseTradeOnFalseSignal } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
 
 export const POST = verifySignatureAppRouter(async (request: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
@@ -12,7 +12,7 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
     const data =
       alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema.parse(json);
 
-    await alpacaReverseTradeOnFalseSignal({
+    await alpacaSubmitReverseTradeOnFalseSignal({
       tradingViewSymbol: data.tradingViewSymbol,
       buyAlert: data.buyAlert,
     });

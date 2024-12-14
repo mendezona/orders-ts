@@ -32,7 +32,11 @@ export const getIsMarketOpen = async (
 
     return parsedMarketClock.is_open;
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        function: "getIsMarketOpen",
+      },
+    });
     console.error(error);
     throw error;
   }

@@ -56,7 +56,11 @@ export const getAlpacaNextAvailableTradingDay = async (date: Dayjs) => {
       "getAlpacaNextAvailableTradingDay - No available trading days found in the next 7 days",
     );
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        function: "getAlpacaNextAvailableTradingDay",
+      },
+    });
     if (error instanceof ZodError) {
       console.error(
         "getAlpacaNextAvailableTradingDay - Error validation failed with ZodError:",
@@ -157,7 +161,11 @@ export const getAlpacaNextIntervalTime = async (
     );
     return nextSessionOpen;
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        function: "getAlpacaNextIntervalTime",
+      },
+    });
     if (error instanceof ZodError) {
       console.error(
         "getAlpacaNextIntervalTime - Error validation failed with ZodError:",

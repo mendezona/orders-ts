@@ -114,7 +114,11 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
         )} NY time, which is ${utcDateTime.format("YYYY-MM-DD HH:mm:ss [UTC]")} UTC`,
       );
     } catch (error) {
-      Sentry.captureException(error);
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset",
+        },
+      });
       console.error(
         "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Error, failed to schedule cron job for take profit order",
         error,
