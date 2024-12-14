@@ -15,7 +15,7 @@ jest.mock("@sentry/nextjs", () => ({
 }));
 
 jest.mock("./alpaca/alpacaAccount.utils", () => ({
-  alpacaGetCredentials: jest.fn(),
+  getAlpacaCredentials: jest.fn(),
 }));
 
 interface AlpacaClock {
@@ -40,8 +40,8 @@ jest.mock("@alpacahq/alpaca-trade-api", () => {
 
 describe("exchanges.utils.ts", () => {
   describe("getIsMarketOpen", () => {
-    const mockAlpacaGetCredentials =
-      alpacaAccountUtils.alpacaGetCredentials as unknown as jest.Mock<
+    const mockGetAlpacaCredentials =
+      alpacaAccountUtils.getAlpacaCredentials as unknown as jest.Mock<
         { key: string; secret: string; paper: boolean },
         []
       >;
@@ -52,7 +52,7 @@ describe("exchanges.utils.ts", () => {
     });
 
     it("returns true if market is open", async () => {
-      mockAlpacaGetCredentials.mockReturnValue({
+      mockGetAlpacaCredentials.mockReturnValue({
         key: "test_key",
         secret: "test_secret",
         paper: false,
@@ -75,7 +75,7 @@ describe("exchanges.utils.ts", () => {
     });
 
     it("returns false if market is closed", async () => {
-      mockAlpacaGetCredentials.mockReturnValue({
+      mockGetAlpacaCredentials.mockReturnValue({
         key: "test_key",
         secret: "test_secret",
         paper: false,
@@ -98,7 +98,7 @@ describe("exchanges.utils.ts", () => {
     });
 
     it("throws an error if Alpaca call fails", async () => {
-      mockAlpacaGetCredentials.mockReturnValue({
+      mockGetAlpacaCredentials.mockReturnValue({
         key: "test_key",
         secret: "test_secret",
         paper: false,
@@ -116,7 +116,7 @@ describe("exchanges.utils.ts", () => {
     });
 
     it("validates the response against AlpacaClockSchema", async () => {
-      mockAlpacaGetCredentials.mockReturnValue({
+      mockGetAlpacaCredentials.mockReturnValue({
         key: "test_key",
         secret: "test_secret",
         paper: false,

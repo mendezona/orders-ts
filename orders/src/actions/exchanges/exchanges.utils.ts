@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca/alpaca.constants";
-import { alpacaGetCredentials } from "./alpaca/alpacaAccount.utils";
+import { getAlpacaCredentials } from "./alpaca/alpacaAccount.utils";
 import { AlpacaClockSchema } from "./alpaca/alpacaApi.types";
 import { LOCAL_TIMEZONE, NEW_YORK_TIMEZONE } from "./exchanges.constants";
 
@@ -20,7 +20,7 @@ export const getIsMarketOpen = async (
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
   try {
-    const credentials = alpacaGetCredentials(accountName);
+    const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
       keyId: credentials.key,
       secretKey: credentials.secret,

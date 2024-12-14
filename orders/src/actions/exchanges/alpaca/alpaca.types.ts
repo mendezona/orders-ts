@@ -14,13 +14,13 @@ export interface AlpacaAccountCredentials {
   paper: boolean;
 }
 
-export interface AlpacaGetAccountBalance {
+export interface AlpacaAccountBalance {
   account: AlpacaApiTradeAccountSchema;
   accountEquity: Decimal;
   accountCash: Decimal;
 }
 
-export interface AlpacaGetPositionForAsset {
+export interface AlpacaPositionForAsset {
   openPositionFound: boolean;
   position?: AlpacaApiGetPosition;
   qty?: Decimal;

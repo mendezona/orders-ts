@@ -8,7 +8,7 @@ import Decimal from "decimal.js";
 import { ZodError } from "zod";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca.constants";
 import { type AlpacaGetLatestQuote } from "./alpaca.types";
-import { alpacaGetCredentials } from "./alpacaAccount.utils";
+import { getAlpacaCredentials } from "./alpacaAccount.utils";
 import {
   AlpacaApiPositionsSchema,
   AssetSchema,
@@ -32,7 +32,7 @@ export const alpacaIsAssetFractionable = async (
   console.log(
     `alpacaIsAssetFractionable - checking if ${symbol} is fractionable`,
   );
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -78,7 +78,7 @@ export const alpacaCalculateProfitLoss = async (
     "alpacaCalculateProfitLoss - start calculating profit/loss for",
     symbol,
   );
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -198,7 +198,7 @@ export const alpacaGetLatestQuote = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<AlpacaGetLatestQuote> => {
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
@@ -283,7 +283,7 @@ export const alpacaAreHoldingsClosed = async (
   console.log(
     `alpacaAreHoldingsClosed - Checking if holdings for ${symbol} are closed`,
   );
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,

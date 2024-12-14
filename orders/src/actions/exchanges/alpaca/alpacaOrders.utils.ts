@@ -35,9 +35,9 @@ import {
   type AlpacaSubmitPairTradeOrderParams,
 } from "./alpaca.types";
 import {
-  alpacaGetAccountBalance,
-  alpacaGetCredentials,
-  alpacaGetPositionForAsset,
+  getAlpacaAccountBalance,
+  getAlpacaCredentials,
+  getAlpacaPositionForAsset,
 } from "./alpacaAccount.utils";
 import {
   type OrderRequest,
@@ -106,7 +106,7 @@ export const alpacaSubmitPairTradeOrder = async ({
    * Assumes there is only one order open at a time for a given symbol
    **/
   const [openPositionOfInverseTrade] = await Promise.all([
-    alpacaGetPositionForAsset(alpacaInverseSymbol),
+    getAlpacaPositionForAsset(alpacaInverseSymbol),
     alpacaCancelAllOpenOrders(accountName),
     deleteAllFractionableTakeProfitOrders(),
   ]);
@@ -239,7 +239,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
   submitTakeProfitOrder = true,
   takeProfitPercentage = new Decimal(1.05),
 }: AlpacaSubmitLimitOrderCustomQuantityParams): Promise<void> => {
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomQuantity");
   logTimezonesOfCurrentTime();
@@ -417,12 +417,12 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   submitTakeProfitOrder = true,
   takeProfitPercentage = new Decimal(1.05),
 }: AlpacaSubmitLimitOrderCustomPercentageParams): Promise<void> => {
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomPercentage");
   logTimezonesOfCurrentTime();
 
-  const accountInfo = await alpacaGetAccountBalance(accountName);
+  const accountInfo = await getAlpacaAccountBalance(accountName);
   const accountEquity = accountInfo.accountEquity;
   const accountCash = accountInfo.accountCash;
   let fundsToDeploy = accountEquity
@@ -525,10 +525,9 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
 
     if (submitTakeProfitOrder) {
       await wait(10000);
-      const currentPosition = await alpacaGetPositionForAsset(
+      const currentPosition = await getAlpacaPositionForAsset(
         alpacaSymbol,
         accountName,
-        5,
       );
 
       if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
@@ -635,12 +634,12 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   submitTakeProfitOrder = true,
   takeProfitPercentage = new Decimal(1.05),
 }: AlpacaSubmitMarketOrderCustomPercentageParams): Promise<void> => {
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaSubmitMarketOrderCustomPercentage");
   logTimezonesOfCurrentTime();
 
-  const accountInfo = await alpacaGetAccountBalance(accountName);
+  const accountInfo = await getAlpacaAccountBalance(accountName);
   const accountEquity = accountInfo.accountEquity;
   const accountCash = accountInfo.accountCash;
   const capitalPercentage = new Decimal(capitalPercentageToDeploy);
@@ -716,10 +715,9 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
 
     if (submitTakeProfitOrder) {
       await wait(10000);
-      const currentPosition = await alpacaGetPositionForAsset(
+      const currentPosition = await getAlpacaPositionForAsset(
         alpacaSymbol,
         accountName,
-        5,
       );
 
       if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
@@ -814,7 +812,7 @@ export const alpacaCloseAllHoldingsOfAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<void> => {
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
 
   console.log("Alpaca Order Begin - alpacaCloseAllHoldingsOfAsset");
   logTimezonesOfCurrentTime();
@@ -849,7 +847,7 @@ export const alpacaCloseAllHoldingsOfAsset = async (
 export const alpacaCancelAllOpenOrders = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ): Promise<void> => {
-  const credentials = alpacaGetCredentials(accountName);
+  const credentials = getAlpacaCredentials(accountName);
   console.log("Alpaca Order Begin - alpacaCancelAllOpenOrders");
 
   try {
@@ -887,10 +885,9 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
       return;
     }
 
-    const currentPosition = await alpacaGetPositionForAsset(
+    const currentPosition = await getAlpacaPositionForAsset(
       order.symbol,
       ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-      5,
     );
 
     if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
@@ -913,7 +910,7 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
       extended_hours: true,
     };
 
-    const credentials = alpacaGetCredentials(ALPACA_LIVE_TRADING_ACCOUNT_NAME);
+    const credentials = getAlpacaCredentials(ALPACA_LIVE_TRADING_ACCOUNT_NAME);
     const alpaca: Alpaca = new Alpaca({
       keyId: credentials.key,
       secretKey: credentials.secret,

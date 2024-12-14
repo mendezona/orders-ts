@@ -7,7 +7,7 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
 import { NEW_YORK_TIMEZONE } from "../exchanges.constants";
-import { alpacaGetCredentials } from "./alpacaAccount.utils";
+import { getAlpacaCredentials } from "./alpacaAccount.utils";
 import { type AlpacaCalendar } from "./alpacaApi.types";
 
 dayjs.extend(utc);
@@ -26,7 +26,7 @@ export const alpacaGetNextIntervalTime = async (
   now: Dayjs,
   intervalMinutes: number,
 ): Promise<Dayjs> => {
-  const credentials = alpacaGetCredentials();
+  const credentials = getAlpacaCredentials();
 
   const alpaca = new Alpaca({
     keyId: credentials.key,
@@ -107,7 +107,7 @@ export const alpacaGetNextIntervalTime = async (
  * @returns A Dayjs object representing the next available trading day.
  */
 export const alpacaGetNextAvailableTradingDay = async (date: Dayjs) => {
-  const credentials = alpacaGetCredentials();
+  const credentials = getAlpacaCredentials();
 
   const alpaca: Alpaca = new Alpaca({
     keyId: credentials.key,
