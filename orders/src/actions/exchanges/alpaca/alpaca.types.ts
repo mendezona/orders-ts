@@ -85,11 +85,10 @@ export interface AlpacaCheckLatestPriceAndReverseTradeCronJobParams {
   buyAlert: boolean;
 }
 
-export interface AlpacaSchedulePriceCheckAtNextInternalCronJobParams {
-  tradingViewSymbol: string;
+export interface AlpacaSchedulePriceCheckAtNextInternalCronJobParams
+  extends AlpacaCheckLatestPriceAndReverseTradeCronJobParams {
   tradingViewPrice: string;
   tradingViewInterval: string;
-  buyAlert: boolean;
 }
 
 export const alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema =
