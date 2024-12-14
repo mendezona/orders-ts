@@ -6,7 +6,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ORDER_TS_BASE_URL } from "~/actions/actions.constants";
-import { NEW_YORK_TIMEZONE } from "../exchanges.contants";
+import { NEW_YORK_TIMEZONE } from "../exchanges.constants";
 import { alpacaGetCredentials } from "./alpacaAccount.utils";
 import { type AlpacaCalendar } from "./alpacaApi.types";
 

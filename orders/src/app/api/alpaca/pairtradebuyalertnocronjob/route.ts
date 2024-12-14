@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
-import { tradingViewAlertSchema } from "~/actions/exchanges/alpaca/alpaca.types";
 import { alpacaSubmitPairTradeOrder } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
+import { tradingViewAlertSchema } from "~/actions/exchanges/exchanges.types";
 
 export async function POST(request: Request) {
   console.log("Endpoint called - alpaca/pairtradebuyalertnocronjob");

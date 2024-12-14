@@ -4,7 +4,7 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca/alpaca.constants";
 import * as alpacaAccountUtils from "./alpaca/alpacaAccount.utils";
-import { LOCAL_TIMEZONE, NEW_YORK_TIMEZONE } from "./exchanges.contants";
+import { LOCAL_TIMEZONE, NEW_YORK_TIMEZONE } from "./exchanges.constants";
 import { getIsMarketOpen, logTimezonesOfCurrentTime } from "./exchanges.utils";
 
 dayjs.extend(utc);

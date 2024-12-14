@@ -6,7 +6,7 @@ import utc from "dayjs/plugin/utc";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca/alpaca.constants";
 import { alpacaGetCredentials } from "./alpaca/alpacaAccount.utils";
 import { AlpacaClockSchema } from "./alpaca/alpacaApi.types";
-import { LOCAL_TIMEZONE, NEW_YORK_TIMEZONE } from "./exchanges.contants";
+import { LOCAL_TIMEZONE, NEW_YORK_TIMEZONE } from "./exchanges.constants";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

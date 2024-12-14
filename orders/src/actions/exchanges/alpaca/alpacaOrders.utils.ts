@@ -18,7 +18,7 @@ import {
 import {
   EXCHANGES,
   EXCHANGE_CAPITAL_GAINS_TAX_RATE,
-} from "../exchanges.contants";
+} from "../exchanges.constants";
 import { getIsMarketOpen, logTimezonesOfCurrentTime } from "../exchanges.utils";
 import {
   ALPACA_CAPITAL_TO_DEPLOY_EQUITY_PERCENTAGE,

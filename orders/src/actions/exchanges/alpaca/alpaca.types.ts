@@ -92,13 +92,6 @@ export interface AlpacaSchedulePriceCheckAtNextInternalCronJobParams {
   buyAlert: boolean;
 }
 
-export const tradingViewAlertSchema = z.object({
-  authenticationToken: z.string(),
-  ticker: z.string(),
-  closePrice: z.string(),
-  interval: z.string(),
-});
-
 export const alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema =
   z.object({
     tradingViewSymbol: z.string(),
