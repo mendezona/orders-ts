@@ -27,7 +27,7 @@ export const getIsMarketOpen = async (
       paper: credentials.paper,
     });
 
-    const marketClock = (await alpaca.getClock()) as unknown;
+    const marketClock: unknown = await alpaca.getClock();
     const parsedMarketClock = AlpacaClockSchema.parse(marketClock);
 
     return parsedMarketClock.is_open;

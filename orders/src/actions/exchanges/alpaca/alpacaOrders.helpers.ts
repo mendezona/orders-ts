@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { ZodError } from "zod";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca.constants";
-import { type AlpacaGetLatestQuote } from "./alpaca.types";
+import { type AlpacaLatestQuote } from "./alpaca.types";
 import { getAlpacaCredentials } from "./alpacaAccount.utils";
 import {
   AlpacaApiPositionsSchema,
@@ -25,40 +25,42 @@ import {
  *
  * @returns - A Boolean, true if the asset is fractionable (e.g., 0.10 quantity is accepted)
  */
-export const alpacaIsAssetFractionable = async (
+export const getAlpacaIsAssetFractionable = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<boolean> => {
-  console.log(
-    `alpacaIsAssetFractionable - checking if ${symbol} is fractionable`,
-  );
-  const credentials = getAlpacaCredentials(accountName);
-
-  const alpaca: Alpaca = new Alpaca({
-    keyId: credentials.key,
-    secretKey: credentials.secret,
-    paper: credentials.paper,
-  });
-
+) => {
   try {
+    const credentials = getAlpacaCredentials(accountName);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
     const alpacaAsset: unknown = await alpaca.getAsset(symbol);
     const asset = AssetSchema.parse(alpacaAsset);
-    console.log(`${symbol} fractionable:`, asset.fractionable);
+
+    if (asset.fractionable) {
+      console.log(`${symbol} is fractionable`);
+    } else {
+      console.log(`${symbol} is not fractionable`);
+    }
+
     return asset.fractionable;
   } catch (error) {
     Sentry.captureException(error);
     if (error instanceof ZodError) {
       console.error(
-        "alpacaIsAssetFractionable - validation failed with ZodError:",
+        "getAlpacaIsAssetFractionable - Error, validation failed with ZodError:",
         error.errors,
       );
     } else {
       console.error(
-        `alpacaIsAssetFractionable - Error - Unable to determine if asset is fractionable:`,
+        `getAlpacaIsAssetFractionable - Error, unable to determine if ${symbol} is fractionable:`,
         error,
       );
     }
-    throw new Error(`Error - Unable to determine if asset is fractionable`);
+    throw new Error(`Error - Unable to determine if ${symbol} is fractionable`);
   }
 };
 
@@ -70,24 +72,18 @@ export const alpacaIsAssetFractionable = async (
  *
  * @returns - A Decimal, a negative or positive number based on profit or loss calculation
  */
-export const alpacaCalculateProfitLoss = async (
+export const getAlpacaCalculateProfitOrLoss = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<Decimal> => {
-  console.log(
-    "alpacaCalculateProfitLoss - start calculating profit/loss for",
-    symbol,
-  );
-  const credentials = getAlpacaCredentials(accountName);
-
-  const alpaca: Alpaca = new Alpaca({
-    keyId: credentials.key,
-    secretKey: credentials.secret,
-    paper: credentials.paper,
-  });
-
+) => {
   try {
-    // Fetch the most recent orders, considering a reasonable limit
+    const credentials = getAlpacaCredentials(accountName);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
     const alpacaRecentOrders: unknown = await alpaca.getOrders({
       symbols: symbol,
       status: QueryOrderStatusSchema.Enum.closed,
@@ -100,8 +96,8 @@ export const alpacaCalculateProfitLoss = async (
     const orders = OrdersSchema.parse(alpacaRecentOrders);
 
     // Find accumulated sale amount (could be split in multiple orders)
-    let accumulatedSellQuantity: Decimal = new Decimal(0);
-    let totalSellValue: Decimal = new Decimal(0);
+    let accumulatedSellQuantity = new Decimal(0);
+    let totalSellValue = new Decimal(0);
     let firstBuyOrderFound = false;
 
     for (const order of [...orders]) {
@@ -122,12 +118,12 @@ export const alpacaCalculateProfitLoss = async (
     }
 
     console.log(
-      `Sell price: ${totalSellValue.toString()}, and sell quantity: ${accumulatedSellQuantity.toString()}`,
+      `getAlpacaCalculateProfitOrLoss - Sell price: ${totalSellValue.toString()}, and sell quantity: ${accumulatedSellQuantity.toString()}`,
     );
 
-    const sellQuantityNeeded: Decimal = accumulatedSellQuantity;
-    let accumulatedBuyQuantity: Decimal = new Decimal(0);
-    let totalBuyCost: Decimal = new Decimal(0);
+    const sellQuantityNeeded = accumulatedSellQuantity;
+    let accumulatedBuyQuantity = new Decimal(0);
+    let totalBuyCost = new Decimal(0);
 
     for (const order of [...orders]) {
       if (order.side === OrderSideSchema.enum.buy) {
@@ -153,19 +149,25 @@ export const alpacaCalculateProfitLoss = async (
     }
 
     if (accumulatedBuyQuantity.lessThan(sellQuantityNeeded)) {
-      const errorMessage = "Not enough buy orders to match the sell quantity.";
+      const errorMessage =
+        "getAlpacaCalculateProfitOrLoss - Not enough buy orders to match the sell quantity.";
       console.log(errorMessage);
-      Sentry.captureMessage(errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log("Buy price:", totalBuyCost.toString());
-    console.log("Sell price:", totalSellValue.toString());
+    console.log(
+      "getAlpacaCalculateProfitOrLoss - Buy price:",
+      totalBuyCost.toString(),
+    );
+    console.log(
+      "getAlpacaCalculateProfitOrLoss - Sell price:",
+      totalSellValue.toString(),
+    );
 
     // Calculate profit or loss
-    const profitLoss: Decimal = totalSellValue.minus(totalBuyCost);
+    const profitLoss = totalSellValue.minus(totalBuyCost);
     console.log(
-      "alpacaCalculateProfitLoss - Total Profit Loss:",
+      "getAlpacaCalculateProfitOrLoss - Total Profit Loss:",
       profitLoss.toString(),
     );
     return profitLoss;
@@ -173,16 +175,18 @@ export const alpacaCalculateProfitLoss = async (
     Sentry.captureException(error);
     if (error instanceof ZodError) {
       console.error(
-        "alpacaCalculateProfitLoss - validation failed with ZodError:",
+        "getAlpacaCalculateProfitOrLoss - Error, validation failed with ZodError:",
         error.errors,
       );
     } else {
       console.error(
-        `alpacaCalculateProfitLoss - Error - Unable to determine profit or loss:`,
+        `getAlpacaCalculateProfitOrLoss - Error, unable to determine profit or loss:`,
         error,
       );
     }
-    throw new Error(`Error - Unable to determine profit or loss`);
+    throw new Error(
+      `getAlpacaCalculateProfitOrLoss - Error, unable to determine profit or loss`,
+    );
   }
 };
 
@@ -192,30 +196,29 @@ export const alpacaCalculateProfitLoss = async (
  * @param symbol - Symbol to check if asset is fractionable
  * @param accountName - Account to use to check if asset is fractionable
  *
- * @returns - A AlpacaGetLatestQuote object or an error object
+ * @returns - A AlpacaLatestQuote object or an error object
  */
-export const alpacaGetLatestQuote = async (
+export const getAlpacaGetLatestQuoteForAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<AlpacaGetLatestQuote> => {
-  const credentials = getAlpacaCredentials(accountName);
-
-  const alpaca: Alpaca = new Alpaca({
-    keyId: credentials.key,
-    secretKey: credentials.secret,
-    paper: credentials.paper,
-  });
-
+) => {
   let attempts = 0;
   const maxAttempts = 3;
 
   while (attempts < maxAttempts) {
+    const credentials = getAlpacaCredentials(accountName);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
     try {
       // Primary method: getLatestQuote
       const getLatestQuoteData: AlpacaQuote =
         await alpaca.getLatestQuote(symbol);
       if (!!getLatestQuoteData.BidPrice || !!getLatestQuoteData.AskPrice) {
-        const convertedQuoteData: AlpacaGetLatestQuote = {
+        const convertedQuoteData: AlpacaLatestQuote = {
           askPrice: new Decimal(getLatestQuoteData.AskPrice),
           bidPrice: new Decimal(getLatestQuoteData.BidPrice),
           askSize: new Decimal(getLatestQuoteData.AskSize),
@@ -232,7 +235,7 @@ export const alpacaGetLatestQuote = async (
       // Backup method: getLatestBar
       const latestBar: AlpacaBar = await alpaca.getLatestBar(symbol);
       if (!!latestBar.HighPrice || !!latestBar.LowPrice) {
-        const convertedBarData: AlpacaGetLatestQuote = {
+        const convertedBarData: AlpacaLatestQuote = {
           askPrice: new Decimal(latestBar.HighPrice),
           bidPrice: new Decimal(latestBar.LowPrice),
           askSize: new Decimal(0),
@@ -248,13 +251,13 @@ export const alpacaGetLatestQuote = async (
     } catch (error) {
       attempts++;
       console.error(
-        `alpacaGetLatestQuote - Attempt ${attempts} failed:`,
+        `getAlpacaGetLatestQuoteForAsset - Attempt ${attempts} failed:`,
         error,
       );
       if (attempts === maxAttempts) {
         Sentry.captureException(error);
         console.error(
-          `alpacaGetLatestQuote - An error occurred while fetching quote data for ${symbol}:`,
+          `getAlpacaGetLatestQuoteForAsset - An error occurred while fetching quote data for ${symbol}:`,
           error,
         );
         throw error;
@@ -262,7 +265,7 @@ export const alpacaGetLatestQuote = async (
     }
   }
 
-  const errorMessage = `alpacaGetLatestQuote - An error occurred while fetching quote data for ${symbol}`;
+  const errorMessage = `getAlpacaGetLatestQuoteForAsset - An error occurred while fetching quote data for ${symbol}`;
   console.error(errorMessage);
   Sentry.captureMessage(errorMessage);
   throw new Error(errorMessage);
@@ -274,52 +277,49 @@ export const alpacaGetLatestQuote = async (
  * @param symbol - The symbol to check for open positions.
  * @param accountName - The account to use for checking holdings.
  *
- * @returns - A boolean indicating if the holdings for the specified symbol are closed.
+ * @returns - A boolean, true if there are open positions, false if there are no open positions
  */
-export const alpacaAreHoldingsClosed = async (
+export const getAlpacaIsPositionOpen = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<boolean> => {
-  console.log(
-    `alpacaAreHoldingsClosed - Checking if holdings for ${symbol} are closed`,
-  );
-  const credentials = getAlpacaCredentials(accountName);
-
-  const alpaca: Alpaca = new Alpaca({
-    keyId: credentials.key,
-    secretKey: credentials.secret,
-    paper: credentials.paper,
-  });
-
+) => {
   try {
+    const credentials = getAlpacaCredentials(accountName);
+    const alpaca: Alpaca = new Alpaca({
+      keyId: credentials.key,
+      secretKey: credentials.secret,
+      paper: credentials.paper,
+    });
+
     const alpacaOpenPositions: unknown = await alpaca.getPositions();
     const openPositions = AlpacaApiPositionsSchema.parse(alpacaOpenPositions);
+
     for (const position of openPositions) {
       if (position.symbol === symbol && parseFloat(position.qty) > 0) {
-        console.log(`Open position for ${symbol} found`);
-        return false;
+        console.log(
+          `getAlpacaIsPositionOpen - Open position found for ${symbol}`,
+        );
+        return true;
       }
     }
 
-    console.log(
-      `alpacaAreHoldingsClosed - All positions for ${symbol} have been closed`,
-    );
-    return true;
+    console.log(`getAlpacaIsPositionOpen - All positions closed for ${symbol}`);
+    return false;
   } catch (error) {
     Sentry.captureException(error);
     if (error instanceof ZodError) {
       console.error(
-        "alpacaCalculateProfitLoss - validation failed with ZodError:",
+        "getAlpacaIsPositionOpen - Error, validation failed with ZodError:",
         error.errors,
       );
     } else {
       console.error(
-        `alpacaAreHoldingsClosed - Error, position data for ${symbol}:`,
+        `getAlpacaIsPositionOpen - Error, unable to determine if position is open for ${symbol}:`,
         error,
       );
     }
     throw new Error(
-      `alpacaAreHoldingsClosed - Error, position data for ${symbol}:`,
+      `getAlpacaIsPositionOpen - Error, unable to determine if position is open for ${symbol}`,
     );
   }
 };

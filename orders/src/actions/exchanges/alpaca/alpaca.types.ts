@@ -27,7 +27,7 @@ export interface AlpacaPositionForAsset {
   market_value?: Decimal;
 }
 
-export interface AlpacaGetLatestQuote {
+export interface AlpacaLatestQuote {
   askPrice: Decimal;
   bidPrice: Decimal;
   askSize: Decimal;

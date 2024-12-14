@@ -8,7 +8,7 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
 
   try {
-    const json = (await request.json()) as unknown;
+    const json: unknown = await request.json();
     const data =
       alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema.parse(json);
 

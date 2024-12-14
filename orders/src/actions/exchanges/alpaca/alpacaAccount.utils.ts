@@ -41,13 +41,14 @@ export const getAlpacaCredentials = (
     );
   }
 
-  console.log("getAlpacaCredentials - Alpaca account credentials found");
-  return {
+  const credentials: AlpacaAccountCredentials = {
     endpoint: accountInfo.endpoint,
     key: accountInfo.key,
     secret: accountInfo.secret,
     paper: accountInfo.paper,
-  } as AlpacaAccountCredentials;
+  };
+  console.log("getAlpacaCredentials - Alpaca account credentials found");
+  return credentials;
 };
 
 /**
@@ -91,11 +92,12 @@ export const getAlpacaAccountBalance = async (
       accountCash,
     );
 
-    return {
+    const accountBalance: AlpacaAccountBalance = {
       account,
       accountEquity,
       accountCash,
-    } as AlpacaAccountBalance;
+    };
+    return accountBalance;
   } catch (error) {
     Sentry.captureException(error);
     if (error instanceof ZodError) {
@@ -126,6 +128,7 @@ export const getAlpacaPositionForAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
+  let positionForAsset: AlpacaPositionForAsset;
   try {
     const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
@@ -139,19 +142,24 @@ export const getAlpacaPositionForAsset = async (
 
     if (!position.qty || !position.market_value) {
       console.log("getAlpacaPositionForAsset - Position details not found");
-      return { openPositionFound: false } as AlpacaPositionForAsset;
+      positionForAsset = {
+        openPositionFound: false,
+      };
+      return positionForAsset;
     }
+
+    positionForAsset = {
+      openPositionFound: true,
+      position,
+      qty: new Decimal(position.qty),
+      market_value: new Decimal(position.market_value),
+    };
 
     console.log(`Position for ${symbol}:`, position);
     console.log(`Quantity of ${symbol}:`, position.qty);
     console.log(`Market value for ${symbol}:`, position.market_value);
     console.log("getAlpacaPositionForAsset - Position details found");
-    return {
-      openPositionFound: true,
-      position,
-      qty: new Decimal(position.qty),
-      market_value: new Decimal(position.market_value),
-    } as AlpacaPositionForAsset;
+    return positionForAsset;
   } catch (error) {
     Sentry.captureException(error);
     if (error instanceof ZodError) {
@@ -177,6 +185,9 @@ export const getAlpacaPositionForAsset = async (
       );
     }
 
-    return { openPositionFound: false } as AlpacaPositionForAsset;
+    positionForAsset = {
+      openPositionFound: false,
+    };
+    return positionForAsset;
   }
 };

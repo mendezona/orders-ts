@@ -29,10 +29,10 @@ export const getAlpacaNextAvailableTradingDay = async (date: Dayjs) => {
       paper: credentials.paper,
     });
 
-    const response = (await alpaca.getCalendar({
+    const response: unknown = await alpaca.getCalendar({
       start: date.format("YYYY-MM-DDTHH:mm:ss[Z]"),
       end: date.add(7, "day").format("YYYY-MM-DDTHH:mm:ss[Z]"),
-    })) as unknown;
+    });
     const parsedResponse = AlpacaCalendarSchema.parse(response);
 
     for (const day of parsedResponse) {
@@ -92,10 +92,10 @@ export const getAlpacaNextIntervalTime = async (
       paper: credentials.paper,
     });
 
-    const response = (await alpaca.getCalendar({
+    const response: unknown = await alpaca.getCalendar({
       start: now.format("YYYY-MM-DDTHH:mm:ss[Z]"),
       end: now.format("YYYY-MM-DDTHH:mm:ss[Z]"),
-    })) as unknown;
+    });
     const parsedResponse = AlpacaCalendarSchema.parse(response);
 
     if (parsedResponse[0] === undefined) {

@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   console.log("Endpoint called - alpaca/pairtradebuyalertnocronjob");
 
   try {
-    const json = (await request.json()) as unknown;
+    const json: unknown = await request.json();
     const tradingViewAlert = tradingViewAlertSchema.parse(json);
     const validAuthenticationToken = process.env.TRADINGVIEW_AUTH_TOKEN;
     if (tradingViewAlert.authenticationToken !== validAuthenticationToken) {

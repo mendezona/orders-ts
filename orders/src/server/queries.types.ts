@@ -17,7 +17,7 @@ export type SaveBuyTradeToDatabaseFlipTradeAlertTableProps = Omit<
 >;
 
 export interface SaveSellTradeToDatabaseSellTableProps
-  extends Omit<SellTrade, "id" | "tradeTime"> {
+  extends Omit<SellTrade, "id" | "tradeTime" | "manuallyAdded"> {
   buyAlert: boolean;
 }
 

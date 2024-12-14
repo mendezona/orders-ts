@@ -13,10 +13,6 @@ import {
   saveSellTradeToDatabaseSellTable,
 } from "~/server/queries";
 import {
-  type SaveBuyTradeToDatabaseFlipTradeAlertTableProps,
-  type SaveSellTradeToDatabaseSellTableProps,
-} from "~/server/queries.types";
-import {
   EXCHANGES,
   EXCHANGE_CAPITAL_GAINS_TAX_RATE,
 } from "../exchanges.constants";
@@ -29,7 +25,7 @@ import {
   ALPACA_TRADINGVIEW_SYMBOLS,
 } from "./alpaca.constants";
 import {
-  type AlpacaGetLatestQuote,
+  type AlpacaLatestQuote,
   type AlpacaReverseTradeOnFalseSignalParams,
   type AlpacaSubmitLimitOrderCustomPercentageParams,
   type AlpacaSubmitLimitOrderCustomQuantityParams,
@@ -53,10 +49,10 @@ import {
   alpacaCronJobScheduleTakeProfitOrderForFractionableAsset,
 } from "./alpacaCronJobs";
 import {
-  alpacaAreHoldingsClosed,
-  alpacaCalculateProfitLoss,
-  alpacaGetLatestQuote,
-  alpacaIsAssetFractionable,
+  getAlpacaCalculateProfitOrLoss,
+  getAlpacaGetLatestQuoteForAsset,
+  getAlpacaIsAssetFractionable,
+  getAlpacaIsPositionOpen,
 } from "./alpacaOrders.helpers";
 
 /**
@@ -127,7 +123,10 @@ export const alpacaSubmitPairTradeOrder = async ({
         buySideOrder: false,
         setSlippagePercentage: new Decimal("0.01"),
         submitTakeProfitOrder: false,
-      } as AlpacaSubmitLimitOrderCustomQuantityParams);
+        accountName,
+        orderType: OrderTypeSchema.Enum.limit,
+        timeInForce: TimeInForceSchema.Enum.day,
+      });
     } else {
       await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
     }
@@ -135,7 +134,7 @@ export const alpacaSubmitPairTradeOrder = async ({
     const timeout = VERCEL_MAXIMUM_SERVER_LIMIT;
     const startTime: number = Date.now();
     while ((Date.now() - startTime) / 1000 < timeout) {
-      if (await alpacaAreHoldingsClosed(alpacaInverseSymbol, accountName)) {
+      if (!(await getAlpacaIsPositionOpen(alpacaInverseSymbol, accountName))) {
         break;
       }
       await wait(1000);
@@ -143,7 +142,7 @@ export const alpacaSubmitPairTradeOrder = async ({
 
     // Calculate and save tax, if applicable
     if (calculateTax) {
-      const profitLossAmount: Decimal = await alpacaCalculateProfitLoss(
+      const profitLossAmount: Decimal = await getAlpacaCalculateProfitOrLoss(
         alpacaInverseSymbol,
         accountName,
       );
@@ -159,7 +158,7 @@ export const alpacaSubmitPairTradeOrder = async ({
           profitOrLossAmount: profitLossAmount.toString(),
           taxableAmount: taxAmount.toString(),
           buyAlert,
-        } as SaveSellTradeToDatabaseSellTableProps);
+        });
       }
     }
   }
@@ -171,7 +170,10 @@ export const alpacaSubmitPairTradeOrder = async ({
       setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
       accountName,
       submitTakeProfitOrder,
-    } as AlpacaSubmitLimitOrderCustomPercentageParams);
+      buySideOrder: true,
+      orderType: OrderTypeSchema.Enum.limit,
+      timeInForce: TimeInForceSchema.Enum.day,
+    });
   } else {
     await alpacaSubmitMarketOrderCustomPercentage({
       alpacaSymbol,
@@ -179,15 +181,16 @@ export const alpacaSubmitPairTradeOrder = async ({
       accountName,
       tradingViewPrice,
       submitTakeProfitOrder,
-    } as AlpacaSubmitMarketOrderCustomPercentageParams);
+      buySideOrder: true,
+      orderType: OrderTypeSchema.Enum.market,
+      timeInForce: TimeInForceSchema.Enum.day,
+    });
   }
 
   let executionPrice = "0";
   if (!buyAlert) {
-    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
-      alpacaSymbol,
-      accountName,
-    );
+    const latestQuote: AlpacaLatestQuote =
+      await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
     executionPrice =
       latestQuote.bidPrice.toString() ?? latestQuote.askPrice.toString();
   }
@@ -196,7 +199,7 @@ export const alpacaSubmitPairTradeOrder = async ({
     exchange: EXCHANGES.ALPACA,
     symbol: tradingViewSymbol,
     price: buyAlert ? tradingViewPrice : executionPrice,
-  } as SaveBuyTradeToDatabaseFlipTradeAlertTableProps);
+  });
 
   if (submitTakeProfitOrder) {
     await alpacaSubmitTakeProfitOrderForFractionableAssets();
@@ -250,10 +253,8 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
 
   if (!limitPrice) {
     let quotePrice: Decimal;
-    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
-      alpacaSymbol,
-      accountName,
-    );
+    const latestQuote: AlpacaLatestQuote =
+      await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
 
     if (buySideOrder) {
       quotePrice = latestQuote.askPrice.gt(0)
@@ -276,7 +277,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     ? OrderSideSchema.enum.buy
     : OrderSideSchema.Enum.sell;
   let orderRequest: OrderRequest;
-  const fractionable: boolean = await alpacaIsAssetFractionable(
+  const fractionable = await getAlpacaIsAssetFractionable(
     alpacaSymbol,
     accountName,
   );
@@ -317,8 +318,8 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [orderResponse, latestQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
-      alpacaGetLatestQuote(orderRequest.symbol ?? "", accountName),
-    ] as const);
+      getAlpacaGetLatestQuoteForAsset(orderRequest.symbol ?? "", accountName),
+    ]);
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
@@ -446,10 +447,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
 
   if (!limitPrice) {
     let quotePrice: Decimal;
-    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
-      alpacaSymbol,
-      accountName,
-    );
+    const latestQuote: AlpacaLatestQuote =
+      await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
 
     if (buySideOrder) {
       quotePrice = latestQuote.askPrice.gt(0)
@@ -471,7 +470,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
   const orderSide: OrderSide = buySideOrder
     ? OrderSideSchema.Enum.buy
     : OrderSideSchema.Enum.sell;
-  const fractionable: boolean = await alpacaIsAssetFractionable(
+  const fractionable = await getAlpacaIsAssetFractionable(
     alpacaSymbol,
     accountName,
   );
@@ -488,10 +487,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
       extended_hours: true,
     };
   } else {
-    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
-      alpacaSymbol,
-      accountName,
-    );
+    const latestQuote: AlpacaLatestQuote =
+      await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
     const price: Decimal = latestQuote.askPrice.gt(0)
       ? latestQuote.askPrice
       : latestQuote.bidPrice;
@@ -523,8 +520,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [orderResponse, latestQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
-      alpacaGetLatestQuote(orderRequest.symbol ?? "", accountName),
-    ] as const);
+      getAlpacaGetLatestQuoteForAsset(orderRequest.symbol ?? "", accountName),
+    ]);
     console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
@@ -666,7 +663,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
   const orderSide: OrderSide = buySideOrder
     ? OrderSideSchema.Enum.buy
     : OrderSideSchema.Enum.sell;
-  const fractionable: boolean = await alpacaIsAssetFractionable(
+  const fractionable = await getAlpacaIsAssetFractionable(
     alpacaSymbol,
     accountName,
   );
@@ -680,10 +677,8 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
       time_in_force: timeInForce,
     };
   } else {
-    const latestQuote: AlpacaGetLatestQuote = await alpacaGetLatestQuote(
-      alpacaSymbol,
-      accountName,
-    );
+    const latestQuote: AlpacaLatestQuote =
+      await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
     const price: Decimal = latestQuote.bidPrice.eq(0)
       ? latestQuote.askPrice
       : latestQuote.bidPrice;
@@ -713,8 +708,8 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [orderResponse, takeProfitQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
-      alpacaGetLatestQuote(alpacaSymbol, accountName),
-    ] as const);
+      getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName),
+    ]);
     console.log(`Market ${orderSide} order submitted: \n`, orderResponse);
 
     if (submitTakeProfitOrder) {
@@ -975,7 +970,7 @@ export const alpacaReverseTradeOnFalseSignal = async ({
   try {
     const [latestFlipAlert, getQuote] = await Promise.all([
       getLatestFlipAlertForSymbol(tradingViewSymbol),
-      alpacaGetLatestQuote(tradingViewSymbol),
+      getAlpacaGetLatestQuoteForAsset(tradingViewSymbol),
     ]);
 
     const lastTradePrice = new Decimal(latestFlipAlert.price);
@@ -1000,13 +995,14 @@ export const alpacaReverseTradeOnFalseSignal = async ({
 
     console.log("alpacaReverseTradeOnFalseSignal - Reverse trade initiated");
     await alpacaCancelAllOpenOrders();
-    await alpacaSubmitPairTradeOrder({
+    const order: AlpacaSubmitPairTradeOrderParams = {
       tradingViewSymbol,
       tradingViewPrice: quotePrice.toString(),
       buyAlert: !buyAlert,
       scheduleCronJob: false,
       submitTakeProfitOrder: false,
-    } as AlpacaSubmitPairTradeOrderParams);
+    };
+    await alpacaSubmitPairTradeOrder(order);
 
     console.log(
       `alpacaReverseTradeOnFalseSignal - Successful for: ${tradingViewSymbol}`,
