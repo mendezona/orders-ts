@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { alpacaCronJobScheduleTakeProfitOrderForFractionableAsset } from "~/actions/exchanges/alpaca/alpacaCronJobs";
 import { alpacaSubmitTakeProfitOrderForFractionableAssets } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
 
 export async function POST() {
@@ -8,6 +9,7 @@ export async function POST() {
 
   try {
     await alpacaSubmitTakeProfitOrderForFractionableAssets();
+    await alpacaCronJobScheduleTakeProfitOrderForFractionableAsset();
 
     return new Response(
       JSON.stringify({

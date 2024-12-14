@@ -121,9 +121,10 @@ export const alpacaSubmitPairTradeOrder = async ({
       openPositionOfInverseTrade.qty
     ) {
       console.log(
-        "alpacaSubmitPairTradeOrder - sell all holdings for:",
+        "alpacaSubmitPairTradeOrder - create sell order for:",
         alpacaInverseSymbol,
       );
+
       if (marketOpen) {
         const assetBalance: Decimal = openPositionOfInverseTrade.qty;
         await alpacaSubmitLimitOrderCustomQuantity({
@@ -186,6 +187,10 @@ export const alpacaSubmitPairTradeOrder = async ({
       }
     }
 
+    console.log(
+      "alpacaSubmitPairTradeOrder - create buy order for:",
+      alpacaSymbol,
+    );
     if (marketOpen) {
       await alpacaSubmitLimitOrderCustomPercentage({
         alpacaSymbol,
@@ -213,6 +218,8 @@ export const alpacaSubmitPairTradeOrder = async ({
     }
 
     let executionPrice = "0";
+
+    // TODO: Refactor how this quote is generated, get the last price used in the order instead of the latest quote
     if (!buyAlert) {
       const latestQuote: AlpacaLatestQuote =
         await getAlpacaGetLatestQuoteForAsset(alpacaSymbol, accountName);
@@ -220,6 +227,10 @@ export const alpacaSubmitPairTradeOrder = async ({
         latestQuote.bidPrice.toString() ?? latestQuote.askPrice.toString();
     }
 
+    console.log(
+      "alpacaSubmitPairTradeOrder - save execution price:",
+      executionPrice,
+    );
     await saveBuyTradeToDatabaseFlipTradeAlertTable({
       exchange: EXCHANGES.ALPACA,
       symbol: tradingViewSymbol,
@@ -227,17 +238,22 @@ export const alpacaSubmitPairTradeOrder = async ({
     });
 
     if (submitTakeProfitOrder) {
+      console.log("alpacaSubmitPairTradeOrder - submit take profit order");
       await alpacaSubmitTakeProfitOrderForFractionableAssets();
+      await alpacaCronJobScheduleTakeProfitOrderForFractionableAsset();
     }
 
     if (scheduleCronJob) {
       if (!tradingViewInterval) {
-        const errorMessage = "Error - Interval required to set cron job";
+        const errorMessage =
+          "alpacaSubmitPairTradeOrder - Error, interval required to set cron job";
         console.log(errorMessage);
-        Sentry.captureMessage(errorMessage);
         throw new Error(errorMessage);
       }
 
+      console.log(
+        "alpacaSubmitPairTradeOrder - schedule cron job for price check at next interval",
+      );
       await alpacaCronJobSchedulePriceCheckAtNextInterval({
         tradingViewSymbol,
         tradingViewPrice,
@@ -956,7 +972,6 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-    await alpacaCronJobScheduleTakeProfitOrderForFractionableAsset();
 
     console.log(
       `Take Profit Limit ${order.side} order submitted: \n`,
