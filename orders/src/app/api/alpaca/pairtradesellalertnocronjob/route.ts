@@ -7,8 +7,7 @@ export async function POST(request: Request) {
   console.log("Endpoint called - alpaca/pairtradesellalertnocronjob");
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const json = await request.json();
+    const json = (await request.json()) as unknown;
     const tradingViewAlert = tradingViewAlertSchema.parse(json);
     const validAuthenticationToken = process.env.TRADINGVIEW_AUTH_TOKEN;
     if (tradingViewAlert.authenticationToken !== validAuthenticationToken) {

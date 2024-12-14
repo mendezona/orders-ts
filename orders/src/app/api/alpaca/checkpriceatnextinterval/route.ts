@@ -8,8 +8,7 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
   console.log("API called - alpaca/checkpriceatnextinterval");
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const json = await request.json();
+    const json = (await request.json()) as unknown;
     const data =
       alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema.parse(json);
 

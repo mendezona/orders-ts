@@ -27,8 +27,7 @@ export const getIsMarketOpen = async (
       paper: credentials.paper,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const marketClock = await alpaca.getClock();
+    const marketClock = (await alpaca.getClock()) as unknown;
     const parsedMarketClock = AlpacaClockSchema.parse(marketClock);
 
     return parsedMarketClock.is_open;
