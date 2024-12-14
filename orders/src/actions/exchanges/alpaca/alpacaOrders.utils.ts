@@ -7,6 +7,7 @@ import { wait } from "~/actions/actions.utils";
 import {
   deleteAllFractionableTakeProfitOrders,
   getFirstFractionableTakeProfitOrder,
+  getLatestFlipAlertForSymbol,
   saveBuyTradeToDatabaseFlipTradeAlertTable,
   saveFractionableTakeProfitOrder,
   saveSellTradeToDatabaseSellTable,
@@ -29,6 +30,7 @@ import {
 } from "./alpaca.constants";
 import {
   type AlpacaGetLatestQuote,
+  type AlpacaReverseTradeOnFalseSignalParams,
   type AlpacaSubmitLimitOrderCustomPercentageParams,
   type AlpacaSubmitLimitOrderCustomQuantityParams,
   type AlpacaSubmitMarketOrderCustomPercentageParams,
@@ -47,8 +49,8 @@ import {
   TimeInForceSchema,
 } from "./alpacaApi.types";
 import {
-  alpacaSchedulePriceCheckAtNextIntervalCronJob,
-  scheduleFractionableTakeProfitOrderCronJob,
+  alpacaCronJobSchedulePriceCheckAtNextInterval,
+  alpacaCronJobScheduleTakeProfitOrderForFractionableAsset,
 } from "./alpacaCronJobs";
 import {
   alpacaAreHoldingsClosed,
@@ -208,7 +210,7 @@ export const alpacaSubmitPairTradeOrder = async ({
       throw new Error(errorMessage);
     }
 
-    await alpacaSchedulePriceCheckAtNextIntervalCronJob({
+    await alpacaCronJobSchedulePriceCheckAtNextInterval({
       tradingViewSymbol,
       tradingViewPrice,
       tradingViewInterval,
@@ -341,7 +343,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
             limitPrice: takeProfitPrice.toString(),
             side: reverseOrderSide,
           }),
-          scheduleFractionableTakeProfitOrderCronJob(),
+          alpacaCronJobScheduleTakeProfitOrderForFractionableAsset(),
         ]);
       } else {
         const takeProfitOrderRequest: OrderRequest = {
@@ -560,7 +562,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
             limitPrice: takeProfitPrice.toString(),
             side: reverseOrderSide,
           }),
-          scheduleFractionableTakeProfitOrderCronJob(),
+          alpacaCronJobScheduleTakeProfitOrderForFractionableAsset(),
         ]);
       } else {
         const takeProfitOrderRequest: OrderRequest = {
@@ -751,7 +753,7 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
             limitPrice: takeProfitPrice.toString(),
             side: reverseOrderSide,
           }),
-          scheduleFractionableTakeProfitOrderCronJob(),
+          alpacaCronJobScheduleTakeProfitOrderForFractionableAsset(),
         ]);
       } else {
         const takeProfitOrderRequest: OrderRequest = {
@@ -921,7 +923,7 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const orderResponse = await alpaca.createOrder(takeProfitOrderRequest);
-    await scheduleFractionableTakeProfitOrderCronJob();
+    await alpacaCronJobScheduleTakeProfitOrderForFractionableAsset();
 
     console.log(
       `Take Profit Limit ${order.side} order submitted: \n`,
@@ -956,6 +958,71 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
     }
 
     console.error("Failed to submit fractionable take profit order:", error);
+    throw error;
+  }
+};
+
+/**
+ * Reverses any false signals for a given symbol by checking the latest flip alert and quote price.
+ *
+ * @param tradingViewSymbol - The stock or crypto ticker symbol.
+ * @param buyAlert - If alert is a buy or a sell alert (intended to flip long to short or vice versa). This should be set to the original alert, eg. if alert was to go long this should be set to true.
+ */
+export const alpacaReverseTradeOnFalseSignal = async ({
+  tradingViewSymbol,
+  buyAlert,
+}: AlpacaReverseTradeOnFalseSignalParams) => {
+  try {
+    const [latestFlipAlert, getQuote] = await Promise.all([
+      getLatestFlipAlertForSymbol(tradingViewSymbol),
+      alpacaGetLatestQuote(tradingViewSymbol),
+    ]);
+
+    const lastTradePrice = new Decimal(latestFlipAlert.price);
+    const quotePrice = getQuote.askPrice.gt(0)
+      ? getQuote.askPrice
+      : getQuote.bidPrice;
+
+    console.log(
+      `alpacaReverseTradeOnFalseSignal - ${tradingViewSymbol}, buy alert: ${buyAlert}, last trade price: ${lastTradePrice.toString()}, quote price: ${quotePrice.toString()}`,
+    );
+
+    const shouldReverseTrade = buyAlert
+      ? lastTradePrice.greaterThan(quotePrice)
+      : lastTradePrice.lessThan(quotePrice);
+
+    if (!shouldReverseTrade) {
+      console.log(
+        "alpacaReverseTradeOnFalseSignal - No trades initiated, handling graceful exit",
+      );
+      return;
+    }
+
+    console.log("alpacaReverseTradeOnFalseSignal - Reverse trade initiated");
+    await alpacaCancelAllOpenOrders();
+    await alpacaSubmitPairTradeOrder({
+      tradingViewSymbol,
+      tradingViewPrice: quotePrice.toString(),
+      buyAlert: !buyAlert,
+      scheduleCronJob: false,
+      submitTakeProfitOrder: false,
+    } as AlpacaSubmitPairTradeOrderParams);
+
+    console.log(
+      `alpacaReverseTradeOnFalseSignal - Successful for: ${tradingViewSymbol}`,
+    );
+  } catch (error) {
+    Sentry.captureException(error, {
+      extra: {
+        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        tradingViewSymbol,
+        buyAlert,
+      },
+    });
+    console.error(
+      "alpacaReverseTradeOnFalseSignal - Error Failed to execute reverse trade",
+      error,
+    );
     throw error;
   }
 };

@@ -80,13 +80,13 @@ export interface AlpacaSubmitMarketOrderCustomPercentageParams
   takeProfitPercentage?: Decimal;
 }
 
-export interface AlpacaCheckLatestPriceAndReverseTradeCronJobParams {
+export interface AlpacaReverseTradeOnFalseSignalParams {
   tradingViewSymbol: string;
   buyAlert: boolean;
 }
 
-export interface AlpacaSchedulePriceCheckAtNextInternalCronJobParams
-  extends AlpacaCheckLatestPriceAndReverseTradeCronJobParams {
+export interface AlpacaCronJobSchedulePriceCheckAtNextIntervalParams
+  extends AlpacaReverseTradeOnFalseSignalParams {
   tradingViewPrice: string;
   tradingViewInterval: string;
 }
