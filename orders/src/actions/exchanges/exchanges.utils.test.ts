@@ -1,7 +1,9 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
+import * as Sentry from "@sentry/nextjs";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { ZodError } from "zod";
 import { ALPACA_LIVE_TRADING_ACCOUNT_NAME } from "./alpaca/alpaca.constants";
 import * as alpacaAccountUtils from "./alpaca/alpacaAccount.utils";
 import { LOCAL_TIMEZONE, NEW_YORK_TIMEZONE } from "./exchanges.constants";
@@ -113,6 +115,9 @@ describe("exchanges.utils.ts", () => {
       await expect(
         getIsMarketOpen(ALPACA_LIVE_TRADING_ACCOUNT_NAME),
       ).rejects.toThrow("Network Error");
+      expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error), {
+        tags: { function: "getIsMarketOpen" },
+      });
     });
 
     it("validates the response against AlpacaClockSchema", async () => {
@@ -134,6 +139,12 @@ describe("exchanges.utils.ts", () => {
       await expect(
         getIsMarketOpen(ALPACA_LIVE_TRADING_ACCOUNT_NAME),
       ).rejects.toThrow();
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.any(ZodError),
+        {
+          tags: { function: "getIsMarketOpen" },
+        },
+      );
     });
   });
 

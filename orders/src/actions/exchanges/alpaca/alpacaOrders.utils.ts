@@ -864,29 +864,30 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
 export const alpacaCloseAllHoldingsOfAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<void> => {
-  const credentials = getAlpacaCredentials(accountName);
-
-  console.log("Alpaca Order Begin - alpacaCloseAllHoldingsOfAsset");
-  logTimezonesOfCurrentTime();
-
+) => {
   try {
+    const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
       keyId: credentials.key,
       secretKey: credentials.secret,
       paper: credentials.paper,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const orderResponse = await alpaca.closePosition(symbol);
+    await alpaca.closePosition(symbol);
     console.log(
-      `Submitted request to close all holdings of ${symbol}, order response:`,
-      orderResponse,
+      "alpacaCloseAllHoldingsOfAsset - Successfully closed all holdings of",
+      symbol,
     );
-    console.log("Alpaca Order End - alpacaCloseAllHoldingsOfAsset");
   } catch (error) {
-    Sentry.captureException(error);
-    console.error("Error - alpacaCloseAllHoldingsOfAsset:", error);
+    Sentry.captureException(error, {
+      tags: {
+        function: "alpacaCloseAllHoldingsOfAsset",
+      },
+    });
+    console.error(
+      "alpacaCloseAllHoldingsOfAsset - Error, failed to close all holdings of asset:",
+      error,
+    );
     throw error;
   }
 };
@@ -899,7 +900,7 @@ export const alpacaCloseAllHoldingsOfAsset = async (
  */
 export const alpacaCancelAllOpenOrders = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
-): Promise<void> => {
+) => {
   try {
     const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({

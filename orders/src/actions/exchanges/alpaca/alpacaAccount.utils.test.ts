@@ -102,7 +102,12 @@ describe("alpacaAccount.utils.ts", () => {
       await expect(
         getAlpacaAccountBalance(ALPACA_LIVE_TRADING_ACCOUNT_NAME, true),
       ).rejects.toThrow(ZodError);
-      expect(Sentry.captureException).toHaveBeenCalled();
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.any(ZodError),
+        {
+          tags: { function: "getAlpacaAccountBalance" },
+        },
+      );
     });
 
     it("throws error if getAccount call fails", async () => {
@@ -111,7 +116,9 @@ describe("alpacaAccount.utils.ts", () => {
       await expect(
         getAlpacaAccountBalance(ALPACA_LIVE_TRADING_ACCOUNT_NAME, true),
       ).rejects.toThrow("Network Error");
-      expect(Sentry.captureException).toHaveBeenCalledWith(mockError);
+      expect(Sentry.captureException).toHaveBeenCalledWith(mockError, {
+        tags: { function: "getAlpacaAccountBalance" },
+      });
     });
   });
 });

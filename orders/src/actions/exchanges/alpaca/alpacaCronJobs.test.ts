@@ -138,7 +138,11 @@ describe("alpacaCronJobs", () => {
       await expect(
         alpacaCronJobScheduleTakeProfitOrderForFractionableAsset(),
       ).rejects.toThrow("Network Error");
-      expect(mockCaptureException).toHaveBeenCalledWith(error);
+      expect(mockCaptureException).toHaveBeenCalledWith(error, {
+        tags: {
+          function: "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset",
+        },
+      });
     });
   });
 });

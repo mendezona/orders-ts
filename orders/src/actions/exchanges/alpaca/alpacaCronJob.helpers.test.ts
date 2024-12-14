@@ -67,7 +67,9 @@ describe("alpacaCronJob.helpers.ts", () => {
       await expect(getAlpacaNextAvailableTradingDay(now)).rejects.toThrow(
         "getAlpacaNextAvailableTradingDay - No available trading days found in the next 7 days",
       );
-      expect(Sentry.captureException).toHaveBeenCalled();
+      expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error), {
+        tags: { function: "getAlpacaNextAvailableTradingDay" },
+      });
     });
 
     it("throws ZodError if the response is invalid", async () => {
@@ -82,7 +84,12 @@ describe("alpacaCronJob.helpers.ts", () => {
       await expect(getAlpacaNextAvailableTradingDay(now)).rejects.toThrow(
         ZodError,
       );
-      expect(Sentry.captureException).toHaveBeenCalled();
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.any(ZodError),
+        {
+          tags: { function: "getAlpacaNextAvailableTradingDay" },
+        },
+      );
     });
 
     it("throws error if getCalendar fails", async () => {
@@ -92,7 +99,9 @@ describe("alpacaCronJob.helpers.ts", () => {
       await expect(getAlpacaNextAvailableTradingDay(now)).rejects.toThrow(
         "Network Error",
       );
-      expect(Sentry.captureException).toHaveBeenCalledWith(error);
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+        tags: { function: "getAlpacaNextAvailableTradingDay" },
+      });
     });
   });
 
@@ -126,7 +135,12 @@ describe("alpacaCronJob.helpers.ts", () => {
       await expect(getAlpacaNextIntervalTime(now, 30)).rejects.toThrow(
         ZodError,
       );
-      expect(Sentry.captureException).toHaveBeenCalled();
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.any(ZodError),
+        {
+          tags: { function: "getAlpacaNextIntervalTime" },
+        },
+      );
     });
 
     it("throws error if getCalendar fails", async () => {
@@ -136,7 +150,9 @@ describe("alpacaCronJob.helpers.ts", () => {
       await expect(getAlpacaNextIntervalTime(now, 30)).rejects.toThrow(
         "Network Error",
       );
-      expect(Sentry.captureException).toHaveBeenCalledWith(error);
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+        tags: { function: "getAlpacaNextIntervalTime" },
+      });
     });
   });
 });
