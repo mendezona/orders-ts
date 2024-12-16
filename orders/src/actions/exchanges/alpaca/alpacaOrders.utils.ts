@@ -126,6 +126,8 @@ export const alpacaSubmitPairTradeOrder = async ({
       );
 
       if (marketOpen) {
+        await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+      } else {
         const assetBalance: Decimal = openPositionOfInverseTrade.qty;
         await alpacaSubmitLimitOrderCustomQuantity({
           alpacaSymbol: alpacaInverseSymbol,
@@ -138,8 +140,6 @@ export const alpacaSubmitPairTradeOrder = async ({
           orderType: OrderTypeSchema.Enum.limit,
           timeInForce: TimeInForceSchema.Enum.day,
         });
-      } else {
-        await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
       }
 
       console.log(
@@ -192,18 +192,6 @@ export const alpacaSubmitPairTradeOrder = async ({
       alpacaSymbol,
     );
     if (marketOpen) {
-      await alpacaSubmitLimitOrderCustomPercentage({
-        alpacaSymbol,
-        capitalPercentageToDeploy,
-        setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
-        accountName,
-        submitTakeProfitOrder,
-        buyAlert,
-        buySideOrder: true,
-        orderType: OrderTypeSchema.Enum.limit,
-        timeInForce: TimeInForceSchema.Enum.day,
-      });
-    } else {
       await alpacaSubmitMarketOrderCustomPercentage({
         alpacaSymbol,
         capitalPercentageToDeploy,
@@ -213,6 +201,18 @@ export const alpacaSubmitPairTradeOrder = async ({
         buyAlert,
         buySideOrder: true,
         orderType: OrderTypeSchema.Enum.market,
+        timeInForce: TimeInForceSchema.Enum.day,
+      });
+    } else {
+      await alpacaSubmitLimitOrderCustomPercentage({
+        alpacaSymbol,
+        capitalPercentageToDeploy,
+        setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
+        accountName,
+        submitTakeProfitOrder,
+        buyAlert,
+        buySideOrder: true,
+        orderType: OrderTypeSchema.Enum.limit,
         timeInForce: TimeInForceSchema.Enum.day,
       });
     }
