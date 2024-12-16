@@ -1,12 +1,9 @@
 import * as Sentry from "@sentry/nextjs";
-import { getIsMarketOpen } from "~/actions/exchanges/exchanges.utils";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(_request: Request) {
   console.log("API called - alpaca/testendpoint");
-
-  await getIsMarketOpen();
 
   try {
     return new Response(JSON.stringify({ message: "Success" }), {

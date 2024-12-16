@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     const json: unknown = await request.json();
     const tradingViewAlert = tradingViewAlertSchema.parse(json);
     const validAuthenticationToken = process.env.TRADINGVIEW_AUTH_TOKEN;
+
     if (tradingViewAlert.authenticationToken !== validAuthenticationToken) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), {
         status: 401,
