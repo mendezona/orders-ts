@@ -8,8 +8,10 @@ export async function POST() {
   );
 
   try {
-    await alpacaSubmitTakeProfitOrderForFractionableAssets();
-    await alpacaCronJobScheduleTakeProfitOrderForFractionableAsset();
+    await Promise.all([
+      alpacaSubmitTakeProfitOrderForFractionableAssets(),
+      alpacaCronJobScheduleTakeProfitOrderForFractionableAsset(),
+    ]);
 
     return new Response(
       JSON.stringify({

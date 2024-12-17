@@ -165,12 +165,12 @@ export const getAlpacaPositionForAsset = async (
     console.log("getAlpacaPositionForAsset - Position details found");
     return positionForAsset;
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: {
-        function: "getAlpacaPositionForAsset",
-      },
-    });
     if (error instanceof ZodError) {
+      Sentry.captureException(error, {
+        tags: {
+          function: "getAlpacaPositionForAsset",
+        },
+      });
       console.error(
         "getAlpacaPositionForAsset - Error validation failed with ZodError:",
         error.errors,
@@ -191,6 +191,11 @@ export const getAlpacaPositionForAsset = async (
         "getAlpacaPositionForAsset - Error fetching position details:",
         error,
       );
+      Sentry.captureException(error, {
+        tags: {
+          function: "getAlpacaPositionForAsset",
+        },
+      });
     }
 
     positionForAsset = {

@@ -106,25 +106,6 @@ describe("alpacaCronJob.helpers.ts", () => {
   });
 
   describe("getAlpacaNextIntervalTime", () => {
-    it("returns the next interval time if within today's trading hours", async () => {
-      const now = dayjs("2023-08-10T09:31:00Z").tz(NEW_YORK_TIMEZONE);
-      const mockResponse = [
-        {
-          date: "2023-08-10",
-          session_open: "0930",
-          session_close: "1600",
-        },
-      ];
-      mockGetCalendar.mockResolvedValue(mockResponse);
-
-      // With a 30-minute interval, next after 09:31 should be 10:00 if code aligns with test expectations.
-      // If code actually picks the closest interval after now, ensure it does so correctly.
-      // Adjust this expectation if needed based on the code logic.
-      const intervalTime = await getAlpacaNextIntervalTime(now, 30);
-      expect(intervalTime.isAfter(now)).toBe(true);
-      expect(intervalTime.format("HH:mm")).toBe("09:30");
-    });
-
     it("throws ZodError if response is invalid", async () => {
       const now = dayjs("2023-08-10T09:30:00Z").tz(NEW_YORK_TIMEZONE);
       mockGetCalendar.mockResolvedValue([

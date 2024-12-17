@@ -89,6 +89,15 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
       const { nextSessionOpen } =
         await getAlpacaNextAvailableTradingDay(timeNowInNY);
 
+      console.log(
+        "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - timeNowInNY",
+        timeNowInNY.toISOString(),
+      );
+      console.log(
+        "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - nextSessionOpen",
+        nextSessionOpen.toISOString(),
+      );
+
       if (!nextSessionOpen.isAfter(timeNowInNY)) {
         throw new Error(
           "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Error nextSessionOpen is not after timeNowInNY",
@@ -101,6 +110,11 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
       const dayOfMonth = utcDateTime.date();
       const month = utcDateTime.month() + 1; // month() returns 0-11, cron uses 1-12
       const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
+
+      console.log(
+        "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - cronExpression",
+        cronExpression,
+      );
 
       const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
       await client.schedules.create({

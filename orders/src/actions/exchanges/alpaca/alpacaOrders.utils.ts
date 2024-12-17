@@ -1,6 +1,5 @@
 import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
-import { AxiosError } from "axios";
 import Decimal from "decimal.js";
 import { VERCEL_MAXIMUM_SERVER_LIMIT } from "~/actions/actions.constants";
 import { wait } from "~/actions/actions.utils";
@@ -24,6 +23,7 @@ import {
   ALPACA_TRADINGVIEW_INVERSE_PAIRS,
   ALPACA_TRADINGVIEW_SYMBOLS,
 } from "./alpaca.constants";
+import { isAxiosError } from "./alpaca.helpers";
 import {
   type AlpacaLatestQuote,
   type AlpacaReverseTradeOnFalseSignalParams,
@@ -262,11 +262,30 @@ export const alpacaSubmitPairTradeOrder = async ({
       });
     }
   } catch (error) {
-    Sentry.captureException(error, {
-      extra: {
-        context: "alpacaSubmitPairTradeOrder",
-      },
-    });
+    if (isAxiosError(error)) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          function: "alpacaSubmitPairTradeOrder",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaSubmitPairTradeOrder",
+        },
+      });
+    }
     throw error;
   }
 };
@@ -297,7 +316,7 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
 }: AlpacaSubmitLimitOrderCustomQuantityParams): Promise<void> => {
   const credentials = getAlpacaCredentials(accountName);
 
-  console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomQuantity");
+  console.log("alpacaSubmitLimitOrderCustomQuantity - order begin");
   logTimezonesOfCurrentTime();
 
   if (!limitPrice) {
@@ -362,14 +381,20 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
       paper: credentials.paper,
     });
 
-    console.log("orderRequest:", orderRequest);
+    console.log(
+      "alpacaSubmitLimitOrderCustomQuantity - orderRequest:",
+      orderRequest,
+    );
     // Execute order creation and latest quote fetch concurrently
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [orderResponse, latestQuote] = await Promise.all([
       alpaca.createOrder(orderRequest),
       getAlpacaGetLatestQuoteForAsset(orderRequest.symbol ?? "", accountName),
     ]);
-    console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
+    console.log(
+      `alpacaSubmitLimitOrderCustomQuantity - Limit ${orderSide} order submitted: \n`,
+      orderResponse,
+    );
 
     if (submitTakeProfitOrder) {
       // TODO: Could send to a queue with delay of 10 seconds instead
@@ -415,35 +440,38 @@ export const alpacaSubmitLimitOrderCustomQuantity = async ({
           deleteAllFractionableTakeProfitOrders(),
         ]);
         console.log(
-          `Take Profit Limit ${orderSide} order submitted: \n`,
+          `alpacaSubmitLimitOrderCustomQuantity - Take Profit Limit ${orderSide} order submitted: \n`,
           orderResponse,
         );
       }
 
-      console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
+      console.log("alpacaSubmitLimitOrderCustomQuantity - order end success");
     }
   } catch (error) {
-    Sentry.captureException(error, {
-      extra: {
-        context: "alpacaSubmitLimitOrderCustomQuantity - Promise.all",
-        orderRequest: JSON.stringify(orderRequest),
-        orderSide,
-        accountName,
-        symbol: orderRequest.symbol,
-        errorDetails:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      },
-      tags: {
-        function: "alpacaSubmitLimitOrderCustomQuantity",
-        operation: "createOrder_and_getLatestQuote",
-      },
-    });
+    if (isAxiosError(error)) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          function: "alpacaSubmitLimitOrderCustomQuantity",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaSubmitLimitOrderCustomQuantity",
+        },
+      });
+    }
     throw error;
   }
 };
@@ -475,7 +503,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
 }: AlpacaSubmitLimitOrderCustomPercentageParams): Promise<void> => {
   const credentials = getAlpacaCredentials(accountName);
 
-  console.log("Alpaca Order Begin - alpacaSubmitLimitOrderCustomPercentage");
+  console.log("alpacaSubmitLimitOrderCustomPercentage - order begin");
   logTimezonesOfCurrentTime();
 
   const accountInfo = await getAlpacaAccountBalance(accountName);
@@ -486,7 +514,8 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
     .toDecimalPlaces(2, Decimal.ROUND_DOWN);
 
   if (fundsToDeploy.lte(0)) {
-    const errorMessage = "Error - Insufficient funds to deploy";
+    const errorMessage =
+      "alpacaSubmitLimitOrderCustomPercentage - Error, insufficient funds to deploy";
     console.log(errorMessage);
     Sentry.captureMessage(errorMessage);
     throw new Error(errorMessage);
@@ -573,7 +602,10 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
       alpaca.createOrder(orderRequest),
       getAlpacaGetLatestQuoteForAsset(orderRequest.symbol ?? "", accountName),
     ]);
-    console.log(`Limit ${orderSide} order submitted: \n`, orderResponse);
+    console.log(
+      `alpacaSubmitLimitOrderCustomPercentage - Limit ${orderSide} order submitted: \n`,
+      orderResponse,
+    );
 
     if (submitTakeProfitOrder) {
       // TODO: Could send to a queue with delay of 10 seconds instead
@@ -585,7 +617,7 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
 
       if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
         const errorMessage =
-          "Error - No open position found to create take profit order";
+          "alpacaSubmitLimitOrderCustomPercentage - Error, no open position found to create take profit order";
         console.log(errorMessage);
         Sentry.captureMessage(errorMessage);
         throw new Error(errorMessage);
@@ -635,31 +667,33 @@ export const alpacaSubmitLimitOrderCustomPercentage = async ({
         );
       }
 
-      console.log("Alpaca Order End - alpacaSubmitLimitOrderCustomQuantity");
+      console.log("alpacaSubmitLimitOrderCustomPercentage - order end success");
     }
   } catch (error) {
-    Sentry.captureException(error, {
-      extra: {
-        context: "alpacaSubmitLimitOrderCustomPercentage - Promise.all",
-        orderRequest: JSON.stringify(orderRequest),
-        orderSide,
-        accountName,
-        symbol: orderRequest.symbol,
-        capitalPercentageToDeploy: capitalPercentageToDeploy.toString(),
-        errorDetails:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      },
-      tags: {
-        function: "alpacaSubmitLimitOrderCustomPercentage",
-        operation: "createOrder_and_getLatestQuote",
-      },
-    });
+    if (isAxiosError(error)) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          function: "alpacaSubmitLimitOrderCustomPercentage",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaSubmitLimitOrderCustomPercentage",
+        },
+      });
+    }
     throw error;
   }
 };
@@ -829,28 +863,30 @@ export const alpacaSubmitMarketOrderCustomPercentage = async ({
 
     console.log("Alpaca Order End - alpacaSubmitMarketOrderCustomPercentage");
   } catch (error) {
-    Sentry.captureException(error, {
-      extra: {
-        context: "alpacaSubmitMarketOrderCustomPercentage - Promise.all",
-        orderRequest: JSON.stringify(orderRequest),
-        orderSide,
-        accountName,
-        symbol: alpacaSymbol,
-        capitalPercentageToDeploy: capitalPercentageToDeploy.toString(),
-        errorDetails:
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error,
-      },
-      tags: {
-        function: "alpacaSubmitMarketOrderCustomPercentage",
-        operation: "createOrder_and_getLatestQuote",
-      },
-    });
+    if (isAxiosError(error)) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          function: "alpacaCloseAllHoldingsOfAsset",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaCloseAllHoldingsOfAsset",
+        },
+      });
+    }
     throw error;
   }
 };
@@ -879,11 +915,30 @@ export const alpacaCloseAllHoldingsOfAsset = async (
       symbol,
     );
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: {
-        function: "alpacaCloseAllHoldingsOfAsset",
-      },
-    });
+    if (isAxiosError(error)) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          function: "alpacaCloseAllHoldingsOfAsset",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaCloseAllHoldingsOfAsset",
+        },
+      });
+    }
     console.error(
       "alpacaCloseAllHoldingsOfAsset - Error, failed to close all holdings of asset:",
       error,
@@ -914,15 +969,30 @@ export const alpacaCancelAllOpenOrders = async (
       "alpacaCancelAllOpenOrders - Successfully cancelled all open orders",
     );
   } catch (error) {
-    Sentry.captureException(error, {
-      extra: {
-        errorDetails: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-        accountName,
-      },
-      tags: {
-        function: "alpacaCancelAllOpenOrders",
-      },
-    });
+    if (isAxiosError(error)) {
+      Sentry.captureException(error, {
+        extra: {
+          errorMessage: error.message,
+          responseData: error.response?.data,
+          responseStatus: error.response?.status,
+          responseHeaders: error.response?.headers,
+          requestData: error.config?.data,
+          requestMethod: error.config?.method,
+          requestURL: error.config?.url,
+          requestHeaders: error.config?.headers,
+        },
+        tags: {
+          function: "alpacaCancelAllOpenOrders",
+          statusCode: error.response?.status?.toString(),
+        },
+      });
+    } else {
+      Sentry.captureException(error, {
+        tags: {
+          function: "alpacaCancelAllOpenOrders",
+        },
+      });
+    }
     console.error(
       "alpacaCancelAllOpenOrders - Error, failed to cancel all open orders:",
       error,
@@ -985,15 +1055,10 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
       `alpacaSubmitTakeProfitOrderForFractionableAssets - Take Profit Limit ${order.side} order submitted successfully`,
     );
   } catch (error) {
-    if (error instanceof AxiosError) {
+    if (isAxiosError(error)) {
       Sentry.captureException(error, {
         extra: {
           errorMessage: error.message,
-          errorStack: error.stack,
-          errorDetails: JSON.stringify(
-            error,
-            Object.getOwnPropertyNames(error),
-          ),
           responseData: error.response?.data,
           responseStatus: error.response?.status,
           responseHeaders: error.response?.headers,
@@ -1004,7 +1069,6 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
         },
         tags: {
           function: "alpacaSubmitTakeProfitOrderForFractionableAssets",
-          errorType: "alpacaSubmitTakeProfitOrderForFractionableAssets",
           statusCode: error.response?.status?.toString(),
         },
       });
