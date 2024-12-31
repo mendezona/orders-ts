@@ -1096,6 +1096,7 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
 export const alpacaSubmitReverseTradeOnFalseSignal = async ({
   tradingViewSymbol,
   buyAlert,
+  accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 }: AlpacaReverseTradeOnFalseSignalParams) => {
   try {
     const [latestFlipAlert, getQuote] = await Promise.all([
@@ -1126,16 +1127,46 @@ export const alpacaSubmitReverseTradeOnFalseSignal = async ({
     console.log(
       "alpacaSubmitReverseTradeOnFalseSignal - Reverse trade initiated",
     );
-    const order: AlpacaSubmitPairTradeOrderParams = {
-      tradingViewSymbol,
-      tradingViewPrice: quotePrice.toString(),
-      buyAlert: !buyAlert,
-      scheduleCronJob: false,
-      submitTakeProfitOrder: false,
-    };
 
-    await alpacaCancelAllOpenOrders();
-    await alpacaSubmitPairTradeOrder(order);
+    const alpacaInverseSymbol: string | undefined = buyAlert
+      ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol]
+      : ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol];
+
+    if (!alpacaInverseSymbol) {
+      throw new Error(
+        `alpacaReverseTradeOnFalseSignal - Invalid symbol: ${tradingViewSymbol}`,
+      );
+    }
+
+    const [openPositionOfInverseTrade, marketOpen] = await Promise.all([
+      getAlpacaPositionForAsset(alpacaInverseSymbol),
+      getIsMarketOpen(),
+      alpacaCancelAllOpenOrders(),
+    ]);
+
+    if (marketOpen) {
+      await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+    } else if (
+      openPositionOfInverseTrade?.openPositionFound &&
+      openPositionOfInverseTrade?.qty
+    ) {
+      const assetBalance: Decimal = openPositionOfInverseTrade.qty;
+      await alpacaSubmitLimitOrderCustomQuantity({
+        alpacaSymbol: alpacaInverseSymbol,
+        quantity: assetBalance,
+        buyAlert,
+        buySideOrder: false,
+        setSlippagePercentage: new Decimal("0.01"),
+        submitTakeProfitOrder: false,
+        accountName,
+        orderType: OrderTypeSchema.Enum.limit,
+        timeInForce: TimeInForceSchema.Enum.day,
+      });
+    } else {
+      throw new Error(
+        `alpacaSubmitReverseTradeOnFalseSignal - No open position found to reverse trade`,
+      );
+    }
 
     console.log(
       `alpacaSubmitReverseTradeOnFalseSignal - Successful for: ${tradingViewSymbol}`,

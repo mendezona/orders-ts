@@ -84,6 +84,7 @@ export interface AlpacaSubmitMarketOrderCustomPercentageParams
 export interface AlpacaReverseTradeOnFalseSignalParams {
   tradingViewSymbol: string;
   buyAlert: boolean;
+  accountName?: string;
 }
 
 export interface AlpacaCronJobSchedulePriceCheckAtNextIntervalParams
