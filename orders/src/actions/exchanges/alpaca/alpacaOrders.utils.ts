@@ -1128,31 +1128,31 @@ export const alpacaSubmitReverseTradeOnFalseSignal = async ({
       "alpacaSubmitReverseTradeOnFalseSignal - Reverse trade initiated",
     );
 
-    const alpacaInverseSymbol: string | undefined = buyAlert
-      ? ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol]
-      : ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol];
+    const alpacaSymbol: string | undefined = buyAlert
+      ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewSymbol]
+      : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewSymbol];
 
-    if (!alpacaInverseSymbol) {
+    if (!alpacaSymbol) {
       throw new Error(
         `alpacaReverseTradeOnFalseSignal - Invalid symbol: ${tradingViewSymbol}`,
       );
     }
 
     const [openPositionOfInverseTrade, marketOpen] = await Promise.all([
-      getAlpacaPositionForAsset(alpacaInverseSymbol),
+      getAlpacaPositionForAsset(alpacaSymbol),
       getIsMarketOpen(),
       alpacaCancelAllOpenOrders(),
     ]);
 
     if (marketOpen) {
-      await alpacaCloseAllHoldingsOfAsset(alpacaInverseSymbol, accountName);
+      await alpacaCloseAllHoldingsOfAsset(alpacaSymbol, accountName);
     } else if (
       openPositionOfInverseTrade?.openPositionFound &&
       openPositionOfInverseTrade?.qty
     ) {
       const assetBalance: Decimal = openPositionOfInverseTrade.qty;
       await alpacaSubmitLimitOrderCustomQuantity({
-        alpacaSymbol: alpacaInverseSymbol,
+        alpacaSymbol: alpacaSymbol,
         quantity: assetBalance,
         buyAlert,
         buySideOrder: false,
