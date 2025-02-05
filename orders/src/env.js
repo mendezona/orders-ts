@@ -17,7 +17,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    DEVELOPMENT_MODE: z.boolean(),
+    DEVELOPMENT_MODE: z.string(),
     FINANCIAL_YEAR_PERIOD: z.string(),
     QSTASH_TOKEN: z.string(),
     QSTASH_URL: z.string(),
