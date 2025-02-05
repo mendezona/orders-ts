@@ -5,7 +5,7 @@ export default function HomePage() {
   return (
     <main>
       <div className="flex h-screen items-center bg-gray-950">
-        <h1 className="mx-auto bg-gradient-to-r from-orange-400 to-blue-400 bg-clip-text px-4 py-4 text-6xl font-bold text-transparent drop-shadow-lg md:px-6 md:py-6">
+        <h1 className="mx-auto bg-linear-to-r from-orange-400 to-blue-400 bg-clip-text px-4 py-4 text-6xl font-bold text-transparent drop-shadow-lg md:px-6 md:py-6">
           {homepageText}
         </h1>
       </div>
