@@ -1025,10 +1025,10 @@ export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
     if (!currentPosition?.openPositionFound || !currentPosition?.qty) {
       await deleteAllFractionableTakeProfitOrders();
 
-      const errorMessage =
-        "alpacaSubmitTakeProfitOrderForFractionableAssets - No open position found to create take profit order";
-      console.log(errorMessage);
-      throw new Error(errorMessage);
+      console.log(
+        "alpacaSubmitTakeProfitOrderForFractionableAssets - No open position found to create take profit order",
+      );
+      return;
     }
 
     const credentials = getAlpacaCredentials(ALPACA_LIVE_TRADING_ACCOUNT_NAME);
@@ -1163,9 +1163,10 @@ export const alpacaSubmitReverseTradeOnFalseSignal = async ({
         timeInForce: TimeInForceSchema.Enum.day,
       });
     } else {
-      throw new Error(
-        `alpacaSubmitReverseTradeOnFalseSignal - No open position found to reverse trade`,
+      console.log(
+        "alpacaSubmitReverseTradeOnFalseSignal - No open position found to reverse trade",
       );
+      return;
     }
 
     console.log(
