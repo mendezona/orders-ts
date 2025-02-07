@@ -58,6 +58,7 @@ export const logTimezonesOfCurrentTime = (
   const timeInNewYork = nowUTC
     .tz(exchangeTimezone)
     .format("YYYY-MM-DD HH:mm:ss");
+  const time = nowUTC.toISOString();
   const timeInLocalTimezone = nowUTC
     .tz(localTimezone)
     .format("YYYY-MM-DD HH:mm:ss");
@@ -65,6 +66,7 @@ export const logTimezonesOfCurrentTime = (
   console.log(
     `logTimezonesOfCurrentTime - Current time in New York: ${timeInNewYork}`,
   );
+  console.log(`logTimezonesOfCurrentTime - Current time in UTC: ${time}`);
   console.log(
     `logTimezonesOfCurrentTime - Current time in Local Timezone: ${timeInLocalTimezone}`,
   );
