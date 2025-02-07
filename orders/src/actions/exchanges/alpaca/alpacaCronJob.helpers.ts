@@ -89,6 +89,9 @@ export const getAlpacaNextIntervalTime = async (
   intervalMinutes: number,
 ) => {
   try {
+    console.log("getAlpacaNextIntervalTime - Getting next interval time");
+    console.log("getAlpacaNextIntervalTime - Now:", now.toISOString());
+
     const credentials = getAlpacaCredentials();
     const alpaca = new Alpaca({
       keyId: credentials.key,
@@ -147,7 +150,7 @@ export const getAlpacaNextIntervalTime = async (
       // If the interval time is after the current time, it is a valid next interval
       if (intervalTime.isAfter(currentNYTime)) {
         console.log(
-          `getAlpacaNextIntervalTime - Next interval time: ${intervalTime.toString()}`,
+          `getAlpacaNextIntervalTime - Next interval time: ${intervalTime.toISOString()}`,
         );
         return intervalTime;
       }
