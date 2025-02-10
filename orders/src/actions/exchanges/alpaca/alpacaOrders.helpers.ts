@@ -29,6 +29,11 @@ export const getAlpacaIsAssetFractionable = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
+  console.log(
+    "getAlpacaIsAssetFractionable - Checking if asset is fractionable for symbol:",
+    symbol,
+  );
+
   try {
     const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
@@ -41,9 +46,11 @@ export const getAlpacaIsAssetFractionable = async (
     const asset = AssetSchema.parse(alpacaAsset);
 
     if (asset.fractionable) {
-      console.log(`${symbol} is fractionable`);
+      console.log(`getAlpacaIsAssetFractionable - ${symbol} is fractionable`);
     } else {
-      console.log(`${symbol} is not fractionable`);
+      console.log(
+        `getAlpacaIsAssetFractionable - ${symbol} is not fractionable`,
+      );
     }
 
     return asset.fractionable;
@@ -76,6 +83,11 @@ export const getAlpacaCalculateProfitOrLoss = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
+  console.log(
+    "getAlpacaCalculateProfitOrLoss - Calculating profit or loss for symbol:",
+    symbol,
+  );
+
   try {
     const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
@@ -202,6 +214,11 @@ export const getAlpacaGetLatestQuoteForAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
+  console.log(
+    "getAlpacaGetLatestQuoteForAsset - Getting latest quote for asset:",
+    symbol,
+  );
+
   let attempts = 0;
   const maxAttempts = 3;
 
@@ -226,7 +243,7 @@ export const getAlpacaGetLatestQuoteForAsset = async (
         };
 
         console.log(
-          "Quote Method 1 - Latest quote data found:",
+          "getAlpacaGetLatestQuoteForAsset - Quote Method 1, Latest quote data found:",
           getLatestQuoteData,
         );
         return convertedQuoteData;
@@ -243,7 +260,7 @@ export const getAlpacaGetLatestQuoteForAsset = async (
         };
 
         console.log(
-          "Quote Method 2 - Latest bar data found:",
+          "getAlpacaGetLatestQuoteForAsset - Quote Method 2, Latest bar data found:",
           convertedBarData,
         );
         return convertedBarData;
@@ -283,6 +300,11 @@ export const getAlpacaIsPositionOpen = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
+  console.log(
+    "getAlpacaIsPositionOpen - Checking if position is open for symbol:",
+    symbol,
+  );
+
   try {
     const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({

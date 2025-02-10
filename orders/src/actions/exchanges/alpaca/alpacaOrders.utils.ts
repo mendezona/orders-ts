@@ -2,7 +2,7 @@ import Alpaca from "@alpacahq/alpaca-trade-api";
 import * as Sentry from "@sentry/nextjs";
 import Decimal from "decimal.js";
 import { VERCEL_MAXIMUM_SERVER_LIMIT } from "~/actions/actions.constants";
-import { wait } from "~/actions/actions.utils";
+import { isAxiosError, wait } from "~/actions/actions.utils";
 import {
   deleteAllFractionableTakeProfitOrders,
   getFirstFractionableTakeProfitOrder,
@@ -23,7 +23,6 @@ import {
   ALPACA_TRADINGVIEW_INVERSE_PAIRS,
   ALPACA_TRADINGVIEW_SYMBOLS,
 } from "./alpaca.constants";
-import { isAxiosError } from "./alpaca.helpers";
 import {
   type AlpacaLatestQuote,
   type AlpacaReverseTradeOnFalseSignalParams,

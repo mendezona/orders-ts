@@ -21,6 +21,10 @@ dayjs.extend(customParseFormat);
  * @returns A Dayjs object representing the next available trading day.
  */
 export const getAlpacaNextAvailableTradingDay = async (date: Dayjs) => {
+  console.log(
+    "getAlpacaNextAvailableTradingDay - Getting next available trading day",
+  );
+
   try {
     const credentials = getAlpacaCredentials();
     const alpaca: Alpaca = new Alpaca({

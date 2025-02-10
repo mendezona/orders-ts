@@ -31,6 +31,11 @@ export const getAlpacaCredentials = (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   developmentModeToggle: boolean = DEVELOPMENT_MODE,
 ) => {
+  console.log(
+    "getAlpacaCredentials - Getting credentials for account:",
+    accountName,
+  );
+
   const accountInfo = !developmentModeToggle
     ? ALPACA_ACCOUNTS[accountName]
     : ALPACA_ACCOUNTS[ALPACA_PAPER_TRADING_ACCOUNT_NAME];
@@ -47,6 +52,7 @@ export const getAlpacaCredentials = (
     secret: accountInfo.secret,
     paper: accountInfo.paper,
   };
+
   console.log("getAlpacaCredentials - Alpaca account credentials found");
   return credentials;
 };
@@ -63,6 +69,11 @@ export const getAlpacaAccountBalance = async (
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   investTaxableIncome = true,
 ) => {
+  console.log(
+    "getAlpacaAccountBalance - Getting account balance for account:",
+    accountName,
+  );
+
   try {
     const credentials = getAlpacaCredentials(accountName);
     const alpaca: Alpaca = new Alpaca({
@@ -82,6 +93,11 @@ export const getAlpacaAccountBalance = async (
     const accountCash = investTaxableIncome
       ? new Decimal(account.cash!)
       : new Decimal(account.cash!).minus(runningTotalOfTaxableProfits);
+    const accountBalance: AlpacaAccountBalance = {
+      account,
+      accountEquity,
+      accountCash,
+    };
 
     console.log(
       "getAlpacaAccountBalance - Available equity minus taxable profits:",
@@ -91,12 +107,6 @@ export const getAlpacaAccountBalance = async (
       "getAlpacaAccountBalance - Available cash minus taxable profits:",
       accountCash,
     );
-
-    const accountBalance: AlpacaAccountBalance = {
-      account,
-      accountEquity,
-      accountCash,
-    };
     return accountBalance;
   } catch (error) {
     Sentry.captureException(error, {
@@ -132,6 +142,11 @@ export const getAlpacaPositionForAsset = async (
   symbol: string,
   accountName: string = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
 ) => {
+  console.log(
+    "getAlpacaPositionForAsset - Getting position for asset:",
+    symbol,
+  );
+
   let positionForAsset: AlpacaPositionForAsset;
   try {
     const credentials = getAlpacaCredentials(accountName);

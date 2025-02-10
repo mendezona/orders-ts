@@ -31,6 +31,10 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
   tradingViewInterval,
   buyAlert,
 }: AlpacaCronJobSchedulePriceCheckAtNextIntervalParams) => {
+  console.log(
+    `alpacaCronJobSchedulePriceCheckAtNextInterval - Scheduling cron job with ticker: ${tradingViewSymbol}, price: ${tradingViewPrice}, and interval: ${tradingViewInterval} minutes`,
+  );
+
   try {
     if (!process.env.QSTASH_URL || !process.env.QSTASH_TOKEN) {
       const errorMessage =
@@ -38,10 +42,6 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
       console.log(errorMessage);
       throw new Error(errorMessage);
     }
-
-    console.log(
-      `alpacaCronJobSchedulePriceCheckAtNextInterval - Scheduling cron job with ticker: ${tradingViewSymbol}, price: ${tradingViewPrice}, and interval: ${tradingViewInterval} minutes`,
-    );
 
     const now = dayjs.utc();
     const nextTime = await getAlpacaNextIntervalTime(
@@ -55,6 +55,10 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
       buyAlert,
     };
     const delayInSeconds: number = nextTime.diff(now, "second");
+
+    console.log(
+      `alpacaCronJobSchedulePriceCheckAtNextInterval - Delay in seconds: ${delayInSeconds}`,
+    );
 
     const response = await client.publish({
       url: `${ORDER_TS_BASE_URL}/api/alpaca/checkpriceatnextinterval`,
@@ -84,6 +88,10 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
  */
 export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
   async () => {
+    console.log(
+      "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Scheduling cron job",
+    );
+
     try {
       const timeNowInNY = dayjs().tz(NEW_YORK_TIMEZONE);
       const { nextSessionOpen } =
