@@ -84,12 +84,12 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
 };
 
 /**
- * Schedules a cron job to execute a take profit order for a fractionable asset on the next available trading day.
+ * Schedules a one-off job to execute a take profit order for a fractionable asset on the next available trading day.
  */
 export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
   async () => {
     console.log(
-      "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Scheduling cron job",
+      "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Scheduling one-off job",
     );
 
     try {
@@ -108,32 +108,29 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
 
       if (!nextSessionOpen.isAfter(timeNowInNY)) {
         throw new Error(
-          "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Error nextSessionOpen is not after timeNowInNY",
+          "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Error: nextSessionOpen is not after timeNowInNY",
         );
       }
 
-      const utcDateTime = nextSessionOpen.utc();
-      const minute = utcDateTime.minute();
-      const hour = utcDateTime.hour();
-      const dayOfMonth = utcDateTime.date();
-      const month = utcDateTime.month() + 1; // month() returns 0-11, cron uses 1-12
-      const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
+      // Convert nextSessionOpen to UTC and compute the delay
+      const utcNextSessionOpen = nextSessionOpen.utc();
+      const nowUTC = dayjs().utc();
+      const delayInSeconds = utcNextSessionOpen.diff(nowUTC, "second");
 
       console.log(
-        "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - cronExpression",
-        cronExpression,
+        `Scheduling one-off job to run in ${delayInSeconds} seconds at ${utcNextSessionOpen.format()} UTC`,
       );
 
       const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
-      await client.schedules.create({
+      await client.publish({
         destination: `${ORDER_TS_BASE_URL}/api/alpaca/submittakeprofitorderforfractionableassets`,
-        cron: cronExpression,
+        delay: delayInSeconds, // delay is in seconds
       });
 
       console.log(
         `alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Scheduled take profit order for ${nextSessionOpen.format(
           "YYYY-MM-DD HH:mm:ss z",
-        )} NY time, which is ${utcDateTime.format("YYYY-MM-DD HH:mm:ss [UTC]")} UTC`,
+        )} NY time, which is ${utcNextSessionOpen.format("YYYY-MM-DD HH:mm:ss [UTC]")} UTC`,
       );
     } catch (error) {
       Sentry.captureException(error, {
@@ -142,7 +139,7 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
         },
       });
       console.error(
-        "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Error, failed to schedule cron job for take profit order",
+        "alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Error, failed to schedule one-off job for take profit order",
         error,
       );
       throw error;
