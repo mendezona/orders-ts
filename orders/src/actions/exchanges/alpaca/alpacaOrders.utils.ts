@@ -1006,6 +1006,10 @@ export const alpacaCancelAllOpenOrders = async (
  * @returns The take profit order.
  */
 export const alpacaSubmitTakeProfitOrderForFractionableAssets = async () => {
+  console.log(
+    "alpacaSubmitTakeProfitOrderForFractionableAssets - Submitting take profit order",
+  );
+
   try {
     const order = await getFirstFractionableTakeProfitOrder();
 

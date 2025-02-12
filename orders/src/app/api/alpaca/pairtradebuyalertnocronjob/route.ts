@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
+import { ALPACA_TRADINGVIEW_INVERSE_PAIRS } from "~/actions/exchanges/alpaca/alpaca.constants";
+import { ALPACA_TRADINGVIEW_SYMBOLS } from "~/actions/exchanges/alpaca/alpaca.constants";
+import { getAlpacaPositionForAsset } from "~/actions/exchanges/alpaca/alpacaAccount.utils";
 import { alpacaSubmitPairTradeOrder } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
 import { tradingViewAlertSchema } from "~/actions/exchanges/exchanges.types";
 
@@ -16,6 +19,27 @@ export async function POST(request: Request) {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    const buyAlert = true;
+    const alpacaSymbol: string | undefined = buyAlert
+      ? ALPACA_TRADINGVIEW_SYMBOLS[tradingViewAlert.ticker]
+      : ALPACA_TRADINGVIEW_INVERSE_PAIRS[tradingViewAlert.ticker];
+
+    if (alpacaSymbol) {
+      const { openPositionFound } =
+        await getAlpacaPositionForAsset(alpacaSymbol);
+
+      if (openPositionFound) {
+        return new Response(
+          JSON.stringify({
+            message: "alpaca/pairtradebuyalert - Position already open",
+          }),
+          {
+            status: 200,
+          },
+        );
+      }
     }
 
     await alpacaSubmitPairTradeOrder({
