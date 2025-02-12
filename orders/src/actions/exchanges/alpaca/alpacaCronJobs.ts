@@ -123,7 +123,7 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
 
       const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
       await client.publish({
-        destination: `${ORDER_TS_BASE_URL}/api/alpaca/submittakeprofitorderforfractionableassets`,
+        url: `${ORDER_TS_BASE_URL}/api/alpaca/submittakeprofitorderforfractionableassets`,
         delay: delayInSeconds, // delay is in seconds
       });
 
