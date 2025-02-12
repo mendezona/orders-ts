@@ -12,7 +12,6 @@ const coreConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  swcMinify: true,
 };
 
 // Injected content via Sentry wizard below
