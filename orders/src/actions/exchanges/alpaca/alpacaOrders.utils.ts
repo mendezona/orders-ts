@@ -134,7 +134,7 @@ export const alpacaSubmitPairTradeOrder = async ({
           buyAlert,
           buySideOrder: false,
           setSlippagePercentage: new Decimal("0.01"),
-          submitTakeProfitOrder: false,
+          submitTakeProfitOrder,
           accountName,
           orderType: OrderTypeSchema.Enum.limit,
           timeInForce: TimeInForceSchema.Enum.day,
@@ -196,11 +196,11 @@ export const alpacaSubmitPairTradeOrder = async ({
         capitalPercentageToDeploy,
         accountName,
         tradingViewPrice,
-        submitTakeProfitOrder,
         buyAlert,
         buySideOrder: true,
         orderType: OrderTypeSchema.Enum.market,
         timeInForce: TimeInForceSchema.Enum.day,
+        submitTakeProfitOrder,
       });
     } else {
       await alpacaSubmitLimitOrderCustomPercentage({
@@ -208,11 +208,11 @@ export const alpacaSubmitPairTradeOrder = async ({
         capitalPercentageToDeploy,
         setSlippagePercentage: ALPACA_TOLERATED_EXTENDED_HOURS_SLIPPAGE,
         accountName,
-        submitTakeProfitOrder,
         buyAlert,
         buySideOrder: true,
         orderType: OrderTypeSchema.Enum.limit,
         timeInForce: TimeInForceSchema.Enum.day,
+        submitTakeProfitOrder,
       });
     }
 
@@ -235,12 +235,6 @@ export const alpacaSubmitPairTradeOrder = async ({
       symbol: tradingViewSymbol,
       price: buyAlert ? tradingViewPrice : executionPrice,
     });
-
-    if (submitTakeProfitOrder) {
-      console.log("alpacaSubmitPairTradeOrder - submit take profit order");
-      await alpacaSubmitTakeProfitOrderForFractionableAssets();
-      await alpacaCronJobScheduleTakeProfitOrderForFractionableAsset();
-    }
 
     if (scheduleCronJob) {
       if (!tradingViewInterval) {
