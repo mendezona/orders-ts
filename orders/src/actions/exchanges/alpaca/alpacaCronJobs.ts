@@ -118,7 +118,7 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
       const delayInSeconds = utcNextSessionOpen.diff(nowUTC, "second");
 
       console.log(
-        `Scheduling one-off job to run in ${delayInSeconds} seconds at ${utcNextSessionOpen.format()} UTC`,
+        `alpacaCronJobScheduleTakeProfitOrderForFractionableAsset - Scheduling one-off job to run in ${delayInSeconds} seconds at ${utcNextSessionOpen.format()} UTC`,
       );
 
       const client = new Client({ token: process.env.QSTASH_TOKEN ?? "" });
