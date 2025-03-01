@@ -18,8 +18,8 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0(typescript@5.8.2)(zod@3.24.2)
       '@upstash/qstash':
-        specifier: ^2.7.22
-        version: 2.7.22
+        specifier: 2.7.20
+        version: 2.7.20
       axios:
         specifier: ^1.8.1
         version: 1.8.1
@@ -1527,8 +1527,8 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
-  '@upstash/qstash@2.7.22':
-    resolution: {integrity: sha512-JFmISZd9U3hTI03ZNLBKrel3r61ojp+ZejBio9ECUAPAdDK8sU5nwXq/drkM1M789a8KFsZ2nKSOKY4gxI8DoQ==}
+  '@upstash/qstash@2.7.20':
+    resolution: {integrity: sha512-fdh5df4BuJwSUhXv33g/Eaj7gG+fu3tBoXyGE5hg4zEZX9fwUY/nuc0uDlLWh54L66JfMdESVOjIaiLa1cgL1Q==}
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -5630,7 +5630,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@upstash/qstash@2.7.22':
+  '@upstash/qstash@2.7.20':
     dependencies:
       crypto-js: 4.2.0
       jose: 5.10.0
