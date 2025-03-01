@@ -30,6 +30,7 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
   tradingViewPrice,
   tradingViewInterval,
   buyAlert,
+  useExtendedHours,
 }: AlpacaCronJobSchedulePriceCheckAtNextIntervalParams) => {
   console.log(
     `alpacaCronJobSchedulePriceCheckAtNextInterval - Scheduling cron job with ticker: ${tradingViewSymbol}, price: ${tradingViewPrice}, and interval: ${tradingViewInterval} minutes`,
@@ -47,6 +48,7 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
     const nextTime = await getAlpacaNextIntervalTime(
       now,
       parseInt(tradingViewInterval, 10),
+      useExtendedHours,
     );
 
     const client = new Client({ token: process.env.QSTASH_TOKEN });

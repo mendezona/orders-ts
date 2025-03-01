@@ -293,9 +293,9 @@ export const AssetSchema = z.object({
 });
 
 const AlpacaDateSchema = z.object({
-  date: z.string().optional().nullable(),
-  open: z.string().optional().nullable(),
-  close: z.string().optional().nullable(),
+  date: z.string(),
+  open: z.string(),
+  close: z.string(),
   session_open: z.string(),
   session_close: z.string(),
   settlement_date: z.string().optional().nullable(),

@@ -53,6 +53,7 @@ export interface AlpacaSubmitPairTradeOrderParams {
   accountName?: string;
   scheduleCronJob?: boolean;
   submitTakeProfitOrder?: boolean;
+  useExtendedHours?: boolean;
 }
 
 export interface AlpacaSubmitLimitOrderCustomQuantityParams
@@ -91,6 +92,7 @@ export interface AlpacaCronJobSchedulePriceCheckAtNextIntervalParams
   extends AlpacaReverseTradeOnFalseSignalParams {
   tradingViewPrice: string;
   tradingViewInterval: string;
+  useExtendedHours: boolean;
 }
 
 export const alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema =

@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       tradingViewPrice: tradingViewAlert.closePrice,
       tradingViewInterval: tradingViewAlert.interval,
       buyAlert: false,
+      useExtendedHours: tradingViewAlert.useExtendedHours,
     });
 
     return new Response(

@@ -5,4 +5,5 @@ export const tradingViewAlertSchema = z.object({
   ticker: z.string(),
   closePrice: z.string(),
   interval: z.string(),
+  useExtendedHours: z.boolean().optional(),
 });

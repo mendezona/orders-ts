@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       tradingViewInterval: tradingViewAlert.interval,
       buyAlert: false,
       scheduleCronJob: false,
+      useExtendedHours: tradingViewAlert.useExtendedHours,
     });
 
     return new Response(

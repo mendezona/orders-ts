@@ -75,6 +75,7 @@ export const alpacaSubmitPairTradeOrder = async ({
   accountName = ALPACA_LIVE_TRADING_ACCOUNT_NAME,
   scheduleCronJob = true,
   submitTakeProfitOrder = true,
+  useExtendedHours = true,
 }: AlpacaSubmitPairTradeOrderParams): Promise<void> => {
   try {
     console.log("alpacaSubmitPairTradeOrder - Begin");
@@ -252,6 +253,7 @@ export const alpacaSubmitPairTradeOrder = async ({
         tradingViewPrice,
         tradingViewInterval,
         buyAlert,
+        useExtendedHours,
       });
     }
   } catch (error) {
