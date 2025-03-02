@@ -37,7 +37,7 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
   );
 
   try {
-    if (!process.env.QSTASH_URL || !process.env.QSTASH_TOKEN) {
+    if (!process.env.QSTASH_TOKEN) {
       const errorMessage =
         "alpacaCronJobSchedulePriceCheckAtNextInterval - QSTASH environment variables are not defined";
       console.log(errorMessage);
