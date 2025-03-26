@@ -68,7 +68,7 @@ export const alpacaCronJobSchedulePriceCheckAtNextInterval = async ({
       body: JSON.stringify(jobData),
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      retries: 1,
+      disableRetry: true,
     });
 
     console.log(
@@ -127,6 +127,7 @@ export const alpacaCronJobScheduleTakeProfitOrderForFractionableAsset =
       await client.publish({
         url: `${ORDER_TS_BASE_URL}/api/alpaca/submittakeprofitorderforfractionableassets`,
         delay: delayInSeconds, // delay is in seconds
+        disableRetry: true,
       });
 
       console.log(
