@@ -1,5 +1,4 @@
 import * as Sentry from "@sentry/nextjs";
-import { z } from "zod";
 import { ALPACA_TRADINGVIEW_INVERSE_PAIRS } from "~/actions/exchanges/alpaca/alpaca.constants";
 import { ALPACA_TRADINGVIEW_SYMBOLS } from "~/actions/exchanges/alpaca/alpaca.constants";
 import { getAlpacaPositionForAsset } from "~/actions/exchanges/alpaca/alpacaAccount.utils";
@@ -62,24 +61,12 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     Sentry.captureException(error);
-    if (error instanceof z.ZodError) {
-      console.error(
-        "alpaca/pairtradebuyalert - Validation error:",
-        error.errors,
-      );
-      return new Response(
-        JSON.stringify({
-          error: "Invalid request data",
-          details: error.errors,
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    } else {
-      console.error("alpaca/pairtradebuyalert - error:", error);
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    console.error("alpaca/pairtradebuyalert - error:", error);
+    return new Response(JSON.stringify({ success: false }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
 }

@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
-import { z } from "zod";
 import { alpacaCheckLatestPriceAndReverseTradeCronJobParamsSchema } from "~/actions/exchanges/alpaca/alpaca.types";
 import { alpacaSubmitReverseTradeOnFalseSignal } from "~/actions/exchanges/alpaca/alpacaOrders.utils";
 
@@ -25,26 +24,12 @@ export const POST = verifySignatureAppRouter(async (request: Request) => {
     });
   } catch (error) {
     Sentry.captureException(error);
-    if (error instanceof z.ZodError) {
-      console.error("Validation error:", error.errors);
-      return new Response(
-        JSON.stringify({
-          error: "Invalid request data",
-          details: error.errors,
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    } else {
-      console.error(
-        "Endpoint error - alpaca/checkpriceatnextinterval, error scheduling cron job:",
-        error,
-      );
-      return new Response(JSON.stringify({ success: false }), {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    }
+    console.error("alpaca/checkpriceatnextinterval - error:", error);
+    return new Response(JSON.stringify({ success: false }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
 });
